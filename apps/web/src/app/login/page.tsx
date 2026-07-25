@@ -1,8 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 import { Button, Input } from '@zuoye/ui';
 
 export default function LoginPage() {
@@ -10,16 +9,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const login = useAuth((s) => s.login);
-  const router = useRouter();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      router.push('/');
+      const res = await api.post('/auth/login', { email, password });
+      const token = res.accessToken;
+      const roles = res.user?.roles || [];
+      localStorage.setItem('token', token);
+
+      if (roles.includes('super_admin') || roles.includes('business_admin') || roles.includes('cs_admin')) {
+        window.location.href = 'http://localhost:3002/login?token=' + encodeURIComponent(token);
+      } else if (roles.includes('shop_owner') || roles.includes('shop_cs') || roles.includes('shop_warehouse')) {
+        window.location.href = 'http://localhost:3001/login?token=' + encodeURIComponent(token);
+      } else {
+        window.location.href = '/';
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

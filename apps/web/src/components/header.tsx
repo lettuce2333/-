@@ -25,6 +25,12 @@ export function Header() {
             {user ? (
               <>
                 <Link href="/profile" className="hover:text-red-500">Hi, {user.nickname || user.email}</Link>
+                {user.roles?.some((r: any) => r.role === 'shop_owner' || r.role === 'shop_cs') && (
+                  <a href={"http://localhost:3001/login?token=".concat(encodeURIComponent(localStorage.getItem("token") || ""))} className="hover:text-green-500 text-xs">商家后台</a>
+                )}
+                {user.roles?.some((r: any) => r.role === 'super_admin' || r.role === 'business_admin' || r.role === 'cs_admin') && (
+                  <a href={"http://localhost:3002/login?token=".concat(encodeURIComponent(localStorage.getItem("token") || ""))} className="hover:text-purple-500 text-xs">管理后台</a>
+                )}
                 <button onClick={logout} className="hover:text-red-500 flex items-center gap-1"><LogOut className="h-3 w-3" />退出</button>
               </>
             ) : (

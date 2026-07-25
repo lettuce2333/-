@@ -1,15 +1,22 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Button, Input } from '@zuoye/ui';
 import { api } from '@/lib/api';
 
-export default function AdminLoginPage() {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      window.location.href = '/dashboard';
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +24,7 @@ export default function AdminLoginPage() {
     try {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', res.accessToken);
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   };
 
@@ -31,7 +38,8 @@ export default function AdminLoginPage() {
           <Input id="password" label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <Button type="submit" className="w-full" loading={loading}>登录</Button>
         </form>
-        <p className="mt-4 text-center text-xs text-gray-400">测试账号：admin@zuoye.com / 123456</p>
+        <p className="mt-4 text-center text-xs text-gray-400">
+        <a href="http://localhost:3000/login" className="text-blue-500 hover:underline">统一登录入口</a> | 测试：admin@zuoye.com / 123456</p>
       </div>
     </div>
   );
