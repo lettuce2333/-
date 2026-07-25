@@ -3,3 +3,4 @@ export { Input } from './input';
 export { Card, CardHeader, CardContent, CardFooter } from './card';
 export { Badge } from './badge';
 export { cn } from './utils';
+export { Pagination } from './pagination';

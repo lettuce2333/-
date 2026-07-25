@@ -120,6 +120,29 @@ export class AdminService {
     return prisma.category.delete({ where: { id } });
   }
 
+  // ===== Orders =====
+  async getOrders(query: { status?: string; page?: number; pageSize?: number }) {
+    const page = query.page || 1;
+    const pageSize = query.pageSize || 20;
+    const where: any = {};
+    if (query.status) where.status = query.status;
+    const [data, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          shop: { select: { id: true, name: true } },
+          user: { select: { id: true, nickname: true, email: true } },
+          items: { take: 3 },
+        },
+      }),
+      prisma.order.count({ where }),
+    ]);
+    return { data, total, page, pageSize };
+  }
+
   // ===== After-sales for admin arbitration =====
   async getPendingArbitrations(page = 1, pageSize = 20) {
     const [data, total] = await Promise.all([

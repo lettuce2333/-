@@ -30,6 +30,7 @@ export default function MerchantDashboard() {
     { href: '/products', label: '商品管理', icon: ShoppingBag },
     { href: '/after-sales', label: '售后管理', icon: MessageSquare },
     { href: '/reviews', label: '评价管理', icon: MessageSquare },
+    { href: '/logistics', label: '物流模板', icon: Package },
     { href: '/shop', label: '店铺设置', icon: Settings },
     { href: '/stats', label: '数据统计', icon: BarChart3 },
   ];

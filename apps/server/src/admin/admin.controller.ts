@@ -51,6 +51,9 @@ export class AdminController {
   @Delete('categories/:id')
   deleteCategory(@Param('id') id: string) { return this.adminService.deleteCategory(parseInt(id)); }
 
+  @Get('orders')
+  getOrders(@Query() query: any) { return this.adminService.getOrders(query); }
+
   @Get('after-sales/pending')
   getPendingArbitrations(@Query() query: any) { return this.adminService.getPendingArbitrations(query.page, query.pageSize); }
 

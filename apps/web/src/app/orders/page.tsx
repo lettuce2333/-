@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Button, Card, Badge } from '@zuoye/ui';
+import { Button, Card, Badge, Pagination } from '@zuoye/ui';
 import { toast } from '@/components/toaster';
 
 const statusMap: Record<string, string> = {
@@ -24,15 +24,19 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
-    const params = statusFilter ? `?status=${statusFilter}` : '';
-    api.get(`/orders${params}`).then((res) => {
+    const params = new URLSearchParams({ page: String(page), pageSize: '10' });
+    if (statusFilter) params.set('status', statusFilter);
+    api.get(`/orders?${params}`).then((res: any) => {
       setOrders(res.data || []);
+      setTotal(res.total || 0);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [user, router, statusFilter]);
+  }, [user, router, statusFilter, page]);
 
   const handlePay = async (id: number) => {
     try {
@@ -112,6 +116,7 @@ export default function OrdersPage() {
               </div>
             </Card>
           ))}
+          <Pagination page={page} pageCount={Math.ceil(total / 10)} total={total} onChange={setPage} />
         </div>
       )}
     </div>

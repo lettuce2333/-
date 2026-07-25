@@ -53,6 +53,33 @@ export class ShopsController {
     return this.shopsService.getShopStats(shopId);
   }
 
+  @Get('merchant/logistics-templates')
+  @UseGuards(AuthGuard('jwt'))
+  getLogisticsTemplates(@CurrentUser('shopId') shopId: number) {
+    return this.shopsService.getLogisticsTemplates(shopId);
+  }
+
+  @Post('merchant/logistics-templates')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('shop_owner')
+  createLogisticsTemplate(@CurrentUser('shopId') shopId: number, @Body() body: any) {
+    return this.shopsService.createLogisticsTemplate(shopId, body);
+  }
+
+  @Put('merchant/logistics-templates/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('shop_owner')
+  updateLogisticsTemplate(@CurrentUser('shopId') shopId: number, @Param('id') id: string, @Body() body: any) {
+    return this.shopsService.updateLogisticsTemplate(shopId, parseInt(id), body);
+  }
+
+  @Delete('merchant/logistics-templates/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('shop_owner')
+  deleteLogisticsTemplate(@CurrentUser('shopId') shopId: number, @Param('id') id: string) {
+    return this.shopsService.deleteLogisticsTemplate(shopId, parseInt(id));
+  }
+
   @Delete('merchant/shop/:shopId/members/:memberId')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('shop_owner')

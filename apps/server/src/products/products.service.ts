@@ -10,6 +10,8 @@ export class ProductsService {
 
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.keyword) where.name = { contains: query.keyword };
+    if (query.priceMin) where.price = { ...(where.price || {}), gte: parseFloat(query.priceMin) };
+    if (query.priceMax) where.price = { ...(where.price || {}), lte: parseFloat(query.priceMax) };
 
     let orderBy: any = { createdAt: 'desc' };
     if (query.sort === 'price_asc') orderBy = { price: 'asc' };

@@ -70,6 +70,22 @@ export class ShopsService {
     return { orders, products, afterSales, revenue: revenue._sum.totalAmount || 0 };
   }
 
+  async getLogisticsTemplates(shopId: number) {
+    return prisma.logisticsTemplate.findMany({ where: { shopId } });
+  }
+
+  async createLogisticsTemplate(shopId: number, data: { name: string; company: string; price: number }) {
+    return prisma.logisticsTemplate.create({ data: { ...data, shopId } });
+  }
+
+  async updateLogisticsTemplate(shopId: number, id: number, data: { name?: string; company?: string; price?: number }) {
+    return prisma.logisticsTemplate.update({ where: { id }, data });
+  }
+
+  async deleteLogisticsTemplate(shopId: number, id: number) {
+    return prisma.logisticsTemplate.delete({ where: { id } });
+  }
+
   async getShopByOwner(userId: number) {
     const mem = await prisma.shopMember.findFirst({
       where: { userId },
