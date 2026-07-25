@@ -9,7 +9,37 @@ export default function NewProductPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: '', categoryId: 1, description: '', price: '', totalStock: '' });
   const [skus, setSkus] = useState([{ specs: '{}', price: '', stock: '' }]);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+      if (!res.ok) throw new Error("上传失败");
+      const data = await res.json();
+      setImages([...images, data.url]);
+    } catch (err: any) {
+      toast(err.message, "error");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setImages(images.filter((_, i) => i !== idx));
+  };
 
   const addSku = () => setSkus([...skus, { specs: '{}', price: '', stock: '' }]);
   const updateSku = (i: number, field: string, val: string) => {
@@ -23,6 +53,7 @@ export default function NewProductPage() {
         name: form.name,
         categoryId: parseInt(form.categoryId as any),
         description: form.description,
+        images: images,
         skus: skus.map((s) => ({
           specs: JSON.parse(s.specs || '{}'),
           price: parseFloat(s.price),
@@ -46,6 +77,34 @@ export default function NewProductPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">商品描述</label>
           <textarea className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        </div>
+        {/* Image upload */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">商品图片</label>
+          <div className="flex flex-wrap gap-3">
+            {images.map((url, i) => (
+              <div key={i} className="relative h-24 w-24 overflow-hidden rounded-lg border">
+                <img src={url} alt="" className="h-full w-full object-cover" />
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-xs text-white hover:bg-black/70"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400">
+              {uploading ? (
+                <span className="text-xs animate-pulse">上传中...</span>
+              ) : (
+                <>
+                  <span className="text-2xl">+</span>
+                  <span className="mt-1 text-xs">上传图片</span>
+                </>
+              )}
+              <input type="file" accept="image/*" onChange={uploadImage} className="hidden" />
+            </label>
+          </div>
         </div>
         <div className="border-t pt-4">
           <div className="mb-2 flex items-center justify-between">

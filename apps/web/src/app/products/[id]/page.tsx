@@ -16,6 +16,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSku, setSelectedSku] = useState<any>(null);
   const [qty, setQty] = useState(1);
+  const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
     api.get(`/products/${id}`).then((res) => {
@@ -24,6 +25,10 @@ export default function ProductDetailPage() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
+
+  const productImages = (() => {
+    try { const arr = JSON.parse(product?.images || "[]"); return Array.isArray(arr) ? arr : []; } catch { return []; }
+  })();
 
   const addToCart = async () => {
     if (!user) { router.push('/login'); return; }
@@ -48,8 +53,31 @@ export default function ProductDetailPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <div className="grid grid-cols-2 gap-8">
-        {/* Image */}
-        <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-8xl">📦</div>
+        {/* Image gallery */}
+        <div>
+          <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+            {productImages.length > 0 ? (
+              <img src={productImages[currentImage]} alt={product.name} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-gray-300 text-8xl">📦</span>
+            )}
+          </div>
+          {productImages.length > 1 && (
+            <div className="mt-3 flex gap-2">
+              {productImages.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentImage(i)}
+                  className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 ${
+                    currentImage === i ? "border-red-500" : "border-transparent"
+                  }`}
+                >
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Info */}
         <div>
