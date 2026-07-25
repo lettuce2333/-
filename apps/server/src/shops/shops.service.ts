@@ -4,12 +4,10 @@ import prisma from '@zuoye/database';
 @Injectable()
 export class ShopsService {
   async getShop(id: number) {
-    const shop = await prisma.shop.findUnique({
-      where: { id },
-      include: { owner: { select: { id: true, nickname: true } } },
-    });
+    const shop = await prisma.shop.findUnique({ where: { id } });
     if (!shop) throw new NotFoundException('店铺不存在');
-    return shop;
+    const owner = await prisma.user.findUnique({ where: { id: shop.ownerId } });
+    return { ...shop, owner: owner ? { id: owner.id, nickname: owner.nickname } : null };
   }
 
   async getMyShop(userId: number) {
@@ -87,10 +85,11 @@ export class ShopsService {
   }
 
   async getShopByOwner(userId: number) {
-    const mem = await prisma.shopMember.findFirst({
-      where: { userId },
-      include: { shop: { include: { owner: { select: { id: true, nickname: true } } } } },
-    });
-    return mem?.shop || null;
+    const mem = await prisma.shopMember.findFirst({ where: { userId } });
+    if (!mem) return null;
+    const shop = await prisma.shop.findUnique({ where: { id: mem.shopId } });
+    if (!shop) return null;
+    const owner = await prisma.user.findUnique({ where: { id: shop.ownerId } });
+    return { ...shop, owner: owner ? { id: owner.id, nickname: owner.nickname } : null };
   }
 }

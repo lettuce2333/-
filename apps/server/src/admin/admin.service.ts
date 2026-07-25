@@ -33,17 +33,19 @@ export class AdminService {
         { phone: { contains: query.keyword } },
       ];
     }
-    const [data, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: { roles: true },
-      }),
-      prisma.user.count({ where }),
-    ]);
-    return { data, total, page, pageSize };
+    const data = await prisma.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+    const total = await prisma.user.count({ where });
+    // Manually load roles for each user
+    const dataWithRoles = await Promise.all(data.map(async (u: any) => {
+      const roles = await prisma.userRole.findMany({ where: { userId: u.id } });
+      return { ...u, roles };
+    }));
+    return { data: dataWithRoles, total, page, pageSize };
   }
 
   async toggleUserStatus(userId: number) {
@@ -59,17 +61,18 @@ export class AdminService {
     const pageSize = query.pageSize || 20;
     const where: any = {};
     if (query.status) where.status = query.status;
-    const [data, total] = await Promise.all([
-      prisma.shop.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: { owner: { select: { id: true, nickname: true, email: true } } },
-      }),
-      prisma.shop.count({ where }),
-    ]);
-    return { data, total, page, pageSize };
+    const data = await prisma.shop.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+    const total = await prisma.shop.count({ where });
+    const dataWithOwner = await Promise.all(data.map(async (s: any) => {
+      const owner = await prisma.user.findUnique({ where: { id: s.ownerId } });
+      return { ...s, owner: owner ? { id: owner.id, nickname: owner.nickname, email: owner.email } : null };
+    }));
+    return { data: dataWithOwner, total, page, pageSize };
   }
 
   async approveShop(shopId: number) {

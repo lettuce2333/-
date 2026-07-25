@@ -21,20 +21,22 @@ export class AuthService {
         roles: { create: { role: 'buyer' } },
       },
     });
+    const tmpRoles = await prisma.userRole.findMany({ where: { userId: user.id } });
+    user.roles = tmpRoles;
 
     return this.generateTokens(user);
   }
 
   async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { roles: true },
-    });
+    let user: any = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('邮箱或密码错误');
     if (user.status === 'banned') throw new UnauthorizedException('账号已被封禁');
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('邮箱或密码错误');
+
+    const roles = await prisma.userRole.findMany({ where: { userId: user.id } });
+    user = { ...user, roles };
 
     return this.generateTokens(user);
   }
