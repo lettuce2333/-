@@ -1,0 +1,322 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  phone     String?
+  password  String
+  nickname  String?
+  avatar    String?
+  status    String    @default("active") // active | banned
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  roles        UserRole[]
+  addresses    Address[]
+  cartItems    CartItem[]
+  orders       Order[]
+  afterSales   AfterSale[]
+  reviews      Review[]
+  favorites    Favorite[]
+  notifications Notification[]
+  ownedShop    Shop?        @relation("ShopOwner")
+  shopMembers  ShopMember[]
+}
+
+model UserRole {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  role   String // buyer | vip_buyer | shop_owner | shop_cs | shop_warehouse | super_admin | business_admin | cs_admin
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+}
+
+model Address {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  receiver  String
+  phone     String
+  province  String
+  city      String
+  district  String
+  detail    String
+  isDefault Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id       Int        @id @default(autoincrement())
+  name     String
+  parentId Int?
+  level    Int        @default(1) // 1 | 2 | 3
+  sort     Int        @default(0)
+  image    String?
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+}
+
+model Shop {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?
+  logo         String?
+  contactPhone String?
+  status       String   @default("pending") // pending | active | rejected | banned
+  ownerId      Int      @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner      User          @relation("ShopOwner", fields: [ownerId], references: [id])
+  members    ShopMember[]
+  products   Product[]
+  orders     Order[]
+  afterSales AfterSale[]
+  logisticsTemplates LogisticsTemplate[]
+  reviewReplies ReviewReply[]
+}
+
+model ShopMember {
+  id     Int    @id @default(autoincrement())
+  shopId Int
+  userId Int
+  role   String // shop_owner | shop_cs | shop_warehouse
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, userId])
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  shopId      Int
+  categoryId  Int
+  name        String
+  description String?
+  images      String   @default("[]") // JSON array
+  price       Float
+  totalStock  Int      @default(0)
+  sales       Int      @default(0)
+  status      String   @default("draft") // draft | active | rejected | archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shop     Shop         @relation(fields: [shopId], references: [id])
+  category Category     @relation(fields: [categoryId], references: [id])
+  skus     ProductSku[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  reviews  Review[]
+  favorites Favorite[]
+}
+
+model ProductSku {
+  id        Int    @id @default(autoincrement())
+  productId Int
+  specs     String @default("{}") // JSON: {"颜色":"红","尺寸":"M"}
+  price     Float
+  stock     Int
+  image     String?
+
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+model CartItem {
+  id        Int    @id @default(autoincrement())
+  userId    Int?
+  guestId   String?
+  productId Int
+  skuId     Int
+  quantity  Int    @default(1)
+
+  product Product    @relation(fields: [productId], references: [id])
+  sku     ProductSku @relation(fields: [skuId], references: [id])
+  user    User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              Int      @id @default(autoincrement())
+  orderNo         String   @unique
+  userId          Int
+  shopId          Int
+  totalAmount     Float
+  status          String   @default("PENDING_PAYMENT")
+  receiverName    String?
+  receiverPhone   String?
+  receiverAddress String?
+  paidAt          DateTime?
+  shippedAt       DateTime?
+  receivedAt      DateTime?
+  completedAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id])
+  shop         Shop             @relation(fields: [shopId], references: [id])
+  items        OrderItem[]
+  payments     Payment[]
+  logistics    Logistics?
+  afterSales   AfterSale[]
+  statusLogs   OrderStatusLog[]
+}
+
+model OrderItem {
+  id          Int    @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  skuId       Int
+  productName String
+  skuSpecs    String @default("{}")
+  quantity    Int
+  unitPrice   Float
+  subtotal    Float
+  image       String?
+
+  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product     @relation(fields: [productId], references: [id])
+  sku     ProductSku  @relation(fields: [skuId], references: [id])
+}
+
+model OrderStatusLog {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  fromStatus String?
+  toStatus   String
+  operator   String
+  remark     String?
+  createdAt  DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id       Int       @id @default(autoincrement())
+  orderId  Int
+  amount   Float
+  method   String    @default("mock_wallet")
+  paidAt   DateTime  @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Logistics {
+  id            Int      @id @default(autoincrement())
+  orderId       Int      @unique
+  company       String?
+  trackingNo    String?
+  status        String   @default("pending") // pending | shipped | delivered | received
+  shippedAt     DateTime?
+  deliveredAt   DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model LogisticsTemplate {
+  id      Int    @id @default(autoincrement())
+  shopId  Int
+  name    String
+  company String
+  price   Float  @default(0)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model AfterSale {
+  id            Int       @id @default(autoincrement())
+  orderId       Int
+  userId        Int
+  shopId        Int
+  type          String    // refund_only | return_refund
+  reason        String
+  amount        Float
+  status        String    @default("PENDING")
+  appliedAt     DateTime  @default(now())
+  autoApprovedAt DateTime?
+  resolvedAt    DateTime?
+
+  order Order @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  shop  Shop  @relation(fields: [shopId], references: [id])
+  logs  AfterSaleLog[]
+}
+
+model AfterSaleLog {
+  id          Int      @id @default(autoincrement())
+  afterSaleId Int
+  operator    String   // user | shop_owner | shop_cs | admin
+  action      String   // apply | approve | refuse | ship | receive | arbitrate | resolve
+  remark      String?
+  createdAt   DateTime @default(now())
+
+  afterSale AfterSale @relation(fields: [afterSaleId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  productId   Int
+  orderId     Int
+  rating      Int      // 1-5
+  content     String
+  images      String   @default("[]")
+  isAnonymous Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user    User         @relation(fields: [userId], references: [id])
+  product Product      @relation(fields: [productId], references: [id])
+  order   Order        @relation(fields: [orderId], references: [id])
+  replies ReviewReply[]
+
+  @@unique([userId, orderId, productId])
+}
+
+model ReviewReply {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  shopId    Int
+  content   String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  shop   Shop   @relation(fields: [shopId], references: [id])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // order | after_sale | system
+  title     String
+  content   String?
+  isRead    Boolean  @default(false)
+  relatedId Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,27 @@
+{
+  "name": "zuoye",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "cd packages/database && npx prisma generate",
+    "db:push": "cd packages/database && npx prisma db push",
+    "db:seed": "cd packages/database && npx tsx seed.ts",
+    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "turbo": "^1.13.0",
+    "typescript": "^5.5.0"
+  },
+  "packageManager": "npm@11.11.0",
+  "dependencies": {
+    "@types/sql.js": "^1.4.11",
+    "sql.js": "^1.14.1"
+  }
+}
