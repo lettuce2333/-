@@ -28,7 +28,7 @@ export class OrdersService {
     }
 
     // Create orders (one per shop)
-    const orders = [];
+    const orders: any[] = [];
     for (const [shopId, items] of shopGroups) {
       const orderNo = `ORD${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       const totalAmount = items.reduce((sum, i) => sum + i.sku.price * i.quantity, 0);

@@ -3,7 +3,7 @@ import prisma from '@zuoye/database';
 
 @Injectable()
 export class ProductsService {
-  async findAll(query: { categoryId?: number; keyword?: string; page?: number; pageSize?: number; sort?: string }) {
+  async findAll(query: { categoryId?: number; keyword?: string; page?: number; pageSize?: number; sort?: string; priceMin?: string; priceMax?: string }) {
     const page = query.page || 1;
     const pageSize = query.pageSize || 20;
     const where: any = { status: 'active' };
