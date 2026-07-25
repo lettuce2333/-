@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button, Card } from '@zuoye/ui';
 import { toast } from '@/components/toaster';
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, Star, Heart } from 'lucide-react';
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +17,7 @@ export default function ProductDetailPage() {
   const [selectedSku, setSelectedSku] = useState<any>(null);
   const [qty, setQty] = useState(1);
   const [currentImage, setCurrentImage] = useState(0);
+  const [favorited, setFavorited] = useState(false);
 
   useEffect(() => {
     api.get(`/products/${id}`).then((res) => {
@@ -29,6 +30,21 @@ export default function ProductDetailPage() {
   const productImages = (() => {
     try { const arr = JSON.parse(product?.images || "[]"); return Array.isArray(arr) ? arr : []; } catch { return []; }
   })();
+
+  useEffect(() => {
+    if (user && product) {
+      api.get(\`/favorites/${id}/check\`).then((res) => setFavorited(res.favorited)).catch(() => {});
+    }
+  }, [user, product, id]);
+
+  const toggleFavorite = async () => {
+    if (!user) { router.push("/login"); return; }
+    try {
+      const res = await api.post(\`/favorites/${id}/toggle\`);
+      setFavorited(res.favorited);
+      toast(res.favorited ? "已收藏" : "已取消收藏", "success");
+    } catch (err: any) { toast(err.message, "error"); }
+  };
 
   const addToCart = async () => {
     if (!user) { router.push('/login'); return; }
@@ -130,8 +146,16 @@ export default function ProductDetailPage() {
             <span className="text-xs text-gray-400">库存 {selectedSku?.stock || 0} 件</span>
           </div>
 
+          {/* Favorite */}
+          <div className="mt-4 flex items-center gap-2">
+            <button onClick={toggleFavorite} className={\`flex items-center gap-1 text-sm \`.concat(favorited ? 'text-red-500' : 'text-gray-400', ' hover:text-red-500')}>
+              <Heart className={\`h-5 w-5 \`.concat(favorited ? 'fill-red-500' : '')} />
+              {favorited ? '已收藏' : '收藏'}
+            </button>
+          </div>
+
           {/* Actions */}
-          <div className="mt-6 flex gap-4">
+          <div className="mt-4 flex gap-4">
             <Button variant="outline" className="flex items-center gap-2" onClick={addToCart}>
               <ShoppingCart className="h-4 w-4" /> 加入购物车
             </Button>

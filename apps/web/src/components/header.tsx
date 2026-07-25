@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { Search, ShoppingCart, User, LogOut, Package } from 'lucide-react';
+import { Search, ShoppingCart, User, LogOut, Package, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -65,6 +65,10 @@ export function Header() {
           <Link href="/orders" className="flex items-center gap-1 hover:text-red-500">
             <Package className="h-5 w-5" />
             我的订单
+          </Link>
+          <Link href="/notifications" className="flex items-center gap-1 hover:text-red-500">
+            <Bell className="h-5 w-5" />
+            消息
           </Link>
           <Link href="/profile" className="flex items-center gap-1 hover:text-red-500">
             <User className="h-5 w-5" />

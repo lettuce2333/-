@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Card } from '@zuoye/ui';
 
+const getImages = (p: any) => {
+  try { const arr = JSON.parse(p?.images || "[]"); return Array.isArray(arr) ? arr : []; } catch { return []; }
+};
+
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

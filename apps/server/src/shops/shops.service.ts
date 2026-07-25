@@ -57,6 +57,19 @@ export class ShopsService {
     return prisma.shopMember.delete({ where: { id: memberId } });
   }
 
+  async getShopStats(shopId: number) {
+    const [orders, products, afterSales] = await Promise.all([
+      prisma.order.count({ where: { shopId } }),
+      prisma.product.count({ where: { shopId } }),
+      prisma.afterSale.count({ where: { shopId, status: { notIn: ['REFUNDED', 'CLOSED'] } } }),
+    ]);
+    const revenue = await prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { shopId, status: { notIn: ['CANCELLED', 'PENDING_PAYMENT'] } },
+    });
+    return { orders, products, afterSales, revenue: revenue._sum.totalAmount || 0 };
+  }
+
   async getShopByOwner(userId: number) {
     const mem = await prisma.shopMember.findFirst({
       where: { userId },

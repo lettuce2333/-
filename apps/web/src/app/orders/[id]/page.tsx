@@ -19,6 +19,9 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
@@ -94,9 +97,35 @@ export default function OrderDetailPage() {
         <div className="flex gap-2">
           {order.status === 'PENDING_PAYMENT' && <Button onClick={handlePay}>去支付</Button>}
           {order.status === 'SHIPPED' && <Button onClick={handleReceive}>确认收货</Button>}
+          {(order.status === 'RECEIVED' || order.status === 'COMPLETED') && <button onClick={() => setShowReview(!showReview)} className="text-sm text-blue-600 hover:underline mr-3">评价</button>}
           {order.status === 'RECEIVED' && <Link href={`/after-sales/new?orderId=${order.id}`}><Button variant="outline">申请售后</Button></Link>}
         </div>
       </div>
+
+      {showReview && (
+        <div className="mt-4 rounded-lg border bg-white p-4 shadow-sm">
+          <h3 className="mb-3 text-sm font-medium">评价商品</h3>
+          <div className="mb-3 flex items-center gap-1">
+            {[1,2,3,4,5].map((s) => (
+              <Star key={s}
+                className={`h-6 w-6 cursor-pointer ${s <= reviewForm.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                onClick={() => setReviewForm({ ...reviewForm, rating: s })}
+              />
+            ))}
+          </div>
+          <textarea
+            placeholder="分享您的使用体验..."
+            className="w-full rounded-lg border px-3 py-2 text-sm"
+            rows={3}
+            value={reviewForm.content}
+            onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowReview(false)}>取消</Button>
+            <Button size="sm" onClick={submitReview} loading={submittingReview}>提交评价</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

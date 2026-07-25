@@ -47,6 +47,12 @@ export class ShopsController {
     return this.shopsService.addMember(userId, parseInt(id), body);
   }
 
+  @Get('merchant/stats')
+  @UseGuards(AuthGuard('jwt'))
+  getStats(@CurrentUser('shopId') shopId: number) {
+    return this.shopsService.getShopStats(shopId);
+  }
+
   @Delete('merchant/shop/:shopId/members/:memberId')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('shop_owner')
