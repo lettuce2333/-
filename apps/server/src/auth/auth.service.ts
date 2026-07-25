@@ -40,13 +40,13 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { roles: true },
-    });
+    const [user, roles] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.userRole.findMany({ where: { userId } }),
+    ]);
     if (!user) throw new UnauthorizedException('用户不存在');
     const { password, ...rest } = user;
-    return rest;
+    return { ...rest, roles };
   }
 
   private generateTokens(user: any) {
