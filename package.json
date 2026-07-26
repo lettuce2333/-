@@ -12,7 +12,7 @@
     "db:generate": "cd packages/database && npx prisma generate",
     "db:push": "cd packages/database && npx prisma db push",
     "db:seed": "cd packages/database && npx tsx seed.ts",
-    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed"
+    "setup": "npm install && cd packages/database && npx tsx seed.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -95,7 +95,9 @@ function createModel(modelName: string) {
     const vals: any[] = [];
     const placeholders: string[] = [];
     for (const [key, val] of Object.entries(data)) {
-      if (val === null || val === undefined || typeof val === 'object') continue;
+      if (val === null || val === undefined) continue;
+      if (val instanceof Date) { fields.push(key); vals.push(val.toISOString()); placeholders.push('?'); continue; }
+      if (typeof val === 'object') continue;
       fields.push(key); vals.push(val); placeholders.push('?');
     }
     const result = execute(`INSERT INTO ${table} (${fields.join(',')}) VALUES (${placeholders.join(',')})`, vals);
