@@ -18,11 +18,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user || user.status === 'banned') {
       throw new UnauthorizedException();
     }
+
+    // Look up shopId if not already in token
+    let shopId = payload.shopId || null;
+    if (!shopId) {
+      const isMerchant = payload.roles?.some(r => ['shop_owner', 'shop_cs', 'shop_warehouse'].includes(r));
+      if (isMerchant) {
+        const shop = await prisma.shop.findFirst({
+          where: { OR: [{ ownerId: payload.userId }, { members: { some: { userId: payload.userId } } }] },
+        });
+        if (shop) shopId = shop.id;
+      }
+    }
+
     return {
       userId: payload.userId,
       roles: payload.roles,
       currentRole: payload.currentRole,
-      shopId: payload.shopId,
+      shopId,
     };
   }
 }
