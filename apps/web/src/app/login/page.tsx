@@ -20,10 +20,10 @@ export default function LoginPage() {
       const roles = res.user?.roles || [];
       localStorage.setItem('token', token);
 
-      if (roles.includes('super_admin') || roles.includes('business_admin') || roles.includes('cs_admin')) {
-        window.location.href = 'http://localhost:3002/login?token=' + encodeURIComponent(token);
+     if (roles.includes('super_admin') || roles.includes('business_admin') || roles.includes('cs_admin')) {
+        window.location.href = 'http://localhost:3002/auth/callback?token=' + encodeURIComponent(token);
       } else if (roles.includes('shop_owner') || roles.includes('shop_cs') || roles.includes('shop_warehouse')) {
-        window.location.href = 'http://localhost:3001/login?token=' + encodeURIComponent(token);
+        window.location.href = 'http://localhost:3001/auth/callback?token=' + encodeURIComponent(token);
       } else {
         window.location.href = '/';
       }
