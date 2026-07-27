@@ -7,7 +7,7 @@ import { User, MapPin, Heart, Star, Package, LogOut } from 'lucide-react';
 export default function ProfilePage() {
   const { user, logout } = useAuth();
 
-  if (!user) return <div className="py-20 text-center text-gray-400">请先登录</div>;
+  if (!user) return <div className="py-24 text-center text-[var(--color-muted)]">请先登录</div>;
 
   const links = [
     { href: '/profile/addresses', label: '收货地址', icon: MapPin },
@@ -17,15 +17,15 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
-      <Card className="mb-6">
-        <div className="flex items-center gap-4 px-6 py-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-2xl text-red-500">
-            <User className="h-8 w-8" />
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <Card className="mb-6 overflow-hidden" accent>
+        <div className="flex items-center gap-4 px-6 py-6 bg-gradient-to-r from-[var(--color-accent)]/5 to-transparent">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-2xl text-[var(--color-accent)]">
+            <User className="h-7 w-7" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">{user.nickname || user.email}</h2>
-            <p className="text-sm text-gray-500">{user.email}</p>
+            <h2 className="text-lg font-bold text-[var(--color-ink)]">{user.nickname || user.email}</h2>
+            <p className="text-sm text-[var(--color-muted)]">{user.email}</p>
           </div>
         </div>
       </Card>
@@ -33,15 +33,16 @@ export default function ProfilePage() {
       <div className="grid grid-cols-2 gap-4">
         {links.map((l) => (
           <Link key={l.href} href={l.href}>
-            <Card className="flex items-center gap-3 px-6 py-4 hover:shadow-md transition-shadow">
-              <l.icon className="h-5 w-5 text-gray-400" />
-              <span className="text-sm font-medium">{l.label}</span>
+            <Card className="flex items-center gap-3 px-5 py-4 group">
+              <l.icon className="h-5 w-5 text-[var(--color-muted)]" />
+              <span className="text-sm font-medium text-[var(--color-ink)]">{l.label}</span>
+              <span className="ml-auto text-[var(--color-muted)] group-hover:text-[var(--color-accent)] transition-colors">&rarr;</span>
             </Card>
           </Link>
         ))}
       </div>
 
-      <button onClick={logout} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-6 py-3 text-sm text-gray-600 hover:bg-gray-200">
+      <button onClick={logout} className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-3 text-sm text-[var(--color-muted)] hover:text-[var(--color-danger)] hover:border-[var(--color-danger)] transition-colors">
         <LogOut className="h-4 w-4" />退出登录
       </button>
     </div>

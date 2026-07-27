@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button, Card, Badge } from '@zuoye/ui';
 import { toast } from '@/components/toaster';
+import { Star } from 'lucide-react';
 
 const statusMap: Record<string, string> = {
   PENDING_PAYMENT: '待付款', PAID: '已付款', SHIPPED: '已发货',
@@ -28,7 +29,9 @@ export default function OrderDetailPage() {
     api.get(`/orders/${id}`).then((res) => { setOrder(res); setLoading(false); }).catch(() => setLoading(false));
   }, [id, user, router]);
 
-  const handlePay = async () => {
+  const submitReview = async () => {  if (!reviewForm.content?.trim()) { toast('请输入评价内容', 'error'); return; }  setSubmittingReview(true);  try {    await api.post('/reviews', { orderId: id, productId: order?.items?.[0]?.productId, rating: reviewForm.rating, content: reviewForm.content });    toast('评价成功', 'success');    setShowReview(false);  } catch (err: any) { toast(err.message, 'error'); } finally { setSubmittingReview(false); }};
+
+const handlePay = async () => {
     try { await api.post(`/orders/${id}/pay`); toast('支付成功', 'success'); setOrder({ ...order, status: 'PAID' }); } catch (err: any) { toast(err.message, 'error'); }
   };
 

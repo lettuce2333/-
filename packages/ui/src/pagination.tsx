@@ -16,15 +16,24 @@ export function Pagination({ page, pageCount, total, onChange }: PaginationProps
       <button
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
-        className={cn('rounded-lg border px-4 py-2 text-sm transition-colors', page <= 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50 hover:border-gray-300')}
+        className={cn(
+          'rounded-[var(--radius-sm)] border border-[var(--color-border)] px-4 py-2 text-sm transition-all duration-150',
+          page <= 1 ? 'text-[var(--color-muted)]/40 cursor-not-allowed border-[var(--color-border-light)]' : 'text-[var(--color-muted)] hover:bg-[var(--color-surface-2)] hover:border-[var(--color-muted)] active:scale-[0.97]',
+        )}
       >
         上一页
       </button>
-      <span className="text-sm text-gray-500">第 <span className="font-medium text-gray-700">{page}</span>/{pageCount} 页 (共 {total} 条)</span>
+      <span className="text-sm text-[var(--color-muted)]">
+        第 <span className="font-medium text-[var(--color-ink)]">{page}</span>/{pageCount} 页
+        <span className="ml-1">(共 {total} 条)</span>
+      </span>
       <button
         onClick={() => onChange(page + 1)}
         disabled={page >= pageCount}
-        className={cn('rounded-lg border px-4 py-2 text-sm transition-colors', page >= pageCount ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50 hover:border-gray-300')}
+        className={cn(
+          'rounded-[var(--radius-sm)] border border-[var(--color-border)] px-4 py-2 text-sm transition-all duration-150',
+          page >= pageCount ? 'text-[var(--color-muted)]/40 cursor-not-allowed border-[var(--color-border-light)]' : 'text-[var(--color-muted)] hover:bg-[var(--color-surface-2)] hover:border-[var(--color-muted)] active:scale-[0.97]',
+        )}
       >
         下一页
       </button>

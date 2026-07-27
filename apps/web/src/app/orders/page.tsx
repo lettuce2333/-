@@ -62,49 +62,52 @@ export default function OrdersPage() {
     } catch (err: any) { toast(err.message, 'error'); }
   };
 
-  if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-48 animate-pulse rounded-lg bg-gray-200" /></div>;
+  if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-48 animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-2)]" /></div>;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
-      <h1 className="mb-6 text-xl font-bold">我的订单</h1>
-      <div className="mb-4 flex flex-wrap gap-2">
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-xl font-bold text-[var(--color-ink)]">我的订单</h1>
+        <span className="text-sm text-[var(--color-muted)]">共 {total} 笔</span>
+      </div>
+      <div className="mb-5 flex flex-wrap gap-1.5 bg-[var(--color-surface)] rounded-[var(--radius-sm)] border border-[var(--color-border-light)] p-0.5">
         {['', 'PENDING_PAYMENT', 'PAID', 'SHIPPED', 'RECEIVED', 'COMPLETED', 'CANCELLED'].map((s) => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`rounded-full px-3 py-1 text-sm ${statusFilter === s ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            className={`px-3 py-1.5 text-sm rounded-[var(--radius-sm)] transition-all duration-150 ${statusFilter === s ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]'}`}>
             {s ? statusMap[s] : '全部'}
           </button>
         ))}
       </div>
 
       {orders.length === 0 ? (
-        <div className="py-20 text-center text-gray-400">
-          <p className="text-4xl mb-2">📋</p>
-          <p>暂无订单</p>
+        <div className="py-24 text-center">
+          <p className="text-4xl mb-3 opacity-40">📋</p>
+          <p className="text-[var(--color-muted)]">暂无订单</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {orders.map((order) => (
-            <Card key={order.id}>
-              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3">
-                <span className="text-xs text-gray-400">{order.orderNo}</span>
+            <Card key={order.id} accent>
+              <div className="flex items-center justify-between border-b border-[var(--color-border-light)] px-5 py-3">
+                <span className="text-xs text-[var(--color-muted)] font-mono">{order.orderNo}</span>
                 <Badge variant={(statusColors[order.status] || 'default') as any}>{statusMap[order.status] || order.status}</Badge>
               </div>
-              <div className="px-6 py-3">
+              <div className="px-5 py-3">
                 {order.items?.map((item: any) => (
                   <div key={item.id} className="flex items-center gap-3 py-2">
-                    <div className="h-14 w-14 flex-shrink-0 rounded bg-gray-100 flex items-center justify-center text-gray-300">📦</div>
+                    <div className="h-14 w-14 flex-shrink-0 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] flex items-center justify-center text-[var(--color-muted)]/40">📦</div>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/products/${item.productId}`} className="text-sm font-medium text-gray-800 hover:text-red-500 line-clamp-1">
+                      <Link href={`/products/${item.productId}`} className="text-sm font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)] transition-colors line-clamp-1">
                         {item.productName}
                       </Link>
-                      <p className="text-xs text-gray-400">￥{item.unitPrice} x {item.quantity}</p>
+                      <p className="text-xs text-[var(--color-muted)] mt-0.5">&yen;{item.unitPrice} x {item.quantity}</p>
                     </div>
-                    <p className="text-sm font-bold text-red-500">￥{item.subtotal}</p>
+                    <p className="text-sm font-bold text-[var(--color-accent)]">&yen;{item.subtotal}</p>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
-                <span className="text-sm">共 {order.items?.length || 0} 件 合计：<span className="font-bold text-red-500">￥{order.totalAmount}</span></span>
+              <div className="flex items-center justify-between border-t border-[var(--color-border-light)] px-5 py-3">
+                <span className="text-sm text-[var(--color-muted)]">共 {order.items?.length || 0} 件 合计：<span className="font-bold text-[var(--color-accent)]">&yen;{order.totalAmount}</span></span>
                 <div className="flex gap-2">
                   <Link href={`/orders/${order.id}`}><Button variant="outline" size="sm">查看详情</Button></Link>
                   {order.status === 'PENDING_PAYMENT' && (

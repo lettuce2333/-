@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Button, Input } from '@zuoye/ui';
+import { Button, Input, Card } from '@zuoye/ui';
 import { api } from '@/lib/api';
 
 export default function LoginPage() {
@@ -29,17 +29,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold">管理后台</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-500">{error}</div>}
-          <Input id="email" label="邮箱" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input id="password" label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Button type="submit" className="w-full" loading={loading}>登录</Button>
-        </form>
-        <p className="mt-4 text-center text-xs text-gray-400">
-        <a href="http://localhost:3000/login" className="text-blue-500 hover:underline">统一登录入口</a> | 测试：admin@zuoye.com / 123456</p>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)]">
+      <div className="w-full max-w-sm px-4">
+        <Card className="overflow-hidden !p-0">
+          <div className="bg-[var(--color-sidebar)] px-8 py-6 text-center">
+            <h1 className="text-xl font-bold text-white">管理后台</h1>
+            <p className="mt-1 text-sm text-[var(--color-sidebar-text)]">优品商城运营管理平台</p>
+          </div>
+          <div className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <div className="rounded-[var(--radius-sm)] bg-red-50 border border-red-100 p-3 text-sm text-[var(--color-danger)]">{error}</div>}
+              <Input id="email" label="邮箱" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="admin@zuoye.com" />
+              <Input id="password" label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="输入密码" />
+              <Button type="submit" className="w-full" size="lg" loading={loading}>登录</Button>
+            </form>
+            <p className="mt-5 text-center text-xs text-[var(--color-muted)]">
+              <a href="http://localhost:3000/login" className="text-[var(--color-accent)] hover:underline font-medium">统一登录入口</a>
+            </p>
+          </div>
+        </Card>
+        <div className="mt-4 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border-light)] p-4 text-sm text-[var(--color-muted)] text-center">
+          测试：admin@zuoye.com / 123456
+        </div>
       </div>
     </div>
   );

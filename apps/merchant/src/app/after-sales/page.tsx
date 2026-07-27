@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Button, Card, Badge } from '@zuoye/ui';
 import { toast } from '@/components/toaster';
+import { MerchantLayout } from '@/components/merchant-layout';
 
 const sl: Record<string, string> = {
   PENDING: '待审核', SHOP_APPROVED: '已同意', SHOP_REFUSED: '已拒绝',
@@ -35,38 +35,39 @@ export default function MerchantAfterSalesPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="mb-4 text-lg font-bold">售后管理</h1>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {['', 'PENDING', 'BUYER_SHIPPED', 'REFUNDED', 'DISPUTE'].map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`rounded-full px-3 py-1 text-sm ${filter === f ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-            {f ? sl[f] : '全部'}
-          </button>
-        ))}
-      </div>
-      {loading ? <div className="h-32 animate-pulse rounded-lg bg-gray-200" /> : items.length === 0 ? (
-        <div className="py-20 text-center text-gray-400">暂无售后记录</div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item) => (
-            <Card key={item.id} className="px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <p>用户：{item.user?.nickname} | {item.type === 'refund_only' ? '仅退款' : '退货退款'} ￥{item.amount}</p>
-                  <p className="mt-1 text-xs text-gray-400">原因：{item.reason}</p>
-                  <p className="text-xs text-gray-400">{new Date(item.appliedAt).toLocaleString()}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={item.status === 'PENDING' ? 'warning' : item.status === 'REFUNDED' ? 'success' : 'info'}>{sl[item.status]}</Badge>
-                  {item.status === 'PENDING' && <><Button size="sm" onClick={() => handleApprove(item.id)}>同意</Button><Button size="sm" variant="outline" onClick={() => handleRefuse(item.id)}>拒绝</Button></>}
-                  {item.status === 'BUYER_SHIPPED' && <Button size="sm" onClick={() => handleReceive(item.id)}>确认收货</Button>}
-                </div>
-              </div>
-            </Card>
+    <MerchantLayout title="售后管理">
+      <div className="p-6">
+        <div className="mb-4 flex flex-wrap gap-1.5 bg-[var(--color-surface)] rounded-[var(--radius-sm)] border border-[var(--color-border-light)] p-0.5">
+          {['', 'PENDING', 'BUYER_SHIPPED', 'REFUNDED', 'DISPUTE'].map((f) => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 text-sm rounded-[var(--radius-sm)] transition-all duration-150 ${filter === f ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]'}`}>
+              {f ? sl[f] : '全部'}
+            </button>
           ))}
         </div>
-      )}
-    </div>
+        {loading ? <div className="h-32 animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-2)]" /> : items.length === 0 ? (
+          <div className="py-20 text-center text-[var(--color-muted)]">暂无售后记录</div>
+        ) : (
+          <div className="space-y-3">
+            {items.map((item) => (
+              <Card key={item.id} accent className="px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <p className="text-[var(--color-ink)]">用户：{item.user?.nickname} | {item.type === 'refund_only' ? '仅退款' : '退货退款'} &yen;{item.amount}</p>
+                    <p className="mt-1 text-xs text-[var(--color-muted)]">原因：{item.reason}</p>
+                    <p className="text-xs text-[var(--color-muted)]">{new Date(item.appliedAt).toLocaleString()}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={item.status === 'PENDING' ? 'warning' : item.status === 'REFUNDED' ? 'success' : 'info'}>{sl[item.status]}</Badge>
+                    {item.status === 'PENDING' && <><Button size="sm" onClick={() => handleApprove(item.id)}>同意</Button><Button size="sm" variant="outline" onClick={() => handleRefuse(item.id)}>拒绝</Button></>}
+                    {item.status === 'BUYER_SHIPPED' && <Button size="sm" onClick={() => handleReceive(item.id)}>确认收货</Button>}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </MerchantLayout>
   );
 }

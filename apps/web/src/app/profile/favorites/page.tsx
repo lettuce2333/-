@@ -24,7 +24,7 @@ export default function FavoritesPage() {
 
   const removeFavorite = async (productId: number) => {
     try {
-      await api.post(\`/favorites/${productId}/toggle\`);
+      await api.post(`/favorites/${productId}/toggle`);
       setItems(items.filter((i) => i.productId !== productId));
       toast('已取消收藏', 'success');
     } catch (err: any) { toast(err.message, 'error'); }
@@ -51,7 +51,7 @@ export default function FavoritesPage() {
             const images = getImages(item.product);
             return (
               <Card key={item.id} className="overflow-hidden">
-                <Link href={\`/products/${item.productId}\`}>
+                <Link href={`/products/${item.productId}`}>
                   <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
                     {images.length > 0 ? (
                       <img src={images[0]} alt="" className="h-full w-full object-cover" />
@@ -61,7 +61,7 @@ export default function FavoritesPage() {
                   </div>
                 </Link>
                 <div className="p-3">
-                  <Link href={\`/products/${item.productId}\`} className="text-sm font-medium text-gray-800 line-clamp-1 hover:text-red-500">
+                  <Link href={`/products/${item.productId}`} className="text-sm font-medium text-gray-800 line-clamp-1 hover:text-red-500">
                     {item.product?.name}
                   </Link>
                   <div className="mt-2 flex items-center justify-between">

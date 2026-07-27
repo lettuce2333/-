@@ -32,7 +32,7 @@ export default function ProductListPage() {
     if (priceRange.max) params.set('priceMax', priceRange.max);
     params.set('page', String(p));
     params.set('pageSize', '12');
-    api.get(\`/products?${params}\`).then((res: any) => {
+    api.get(`/products?${params}`).then((res: any) => {
       setProducts(res.data || []);
       setTotal(res.total || 0);
       setLoading(false);
@@ -48,7 +48,7 @@ export default function ProductListPage() {
     if (categoryId) p.set('categoryId', categoryId);
     if (keyword) p.set('keyword', keyword);
     if (s) p.set('sort', s);
-    return \`/products?${p}\`;
+    return `/products?${p}`;
   };
 
   const handlePriceFilter = () => {
@@ -57,46 +57,62 @@ export default function ProductListPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold">
-          {keyword ? \`搜索: ${keyword}\` : categoryId ? '分类商品' : '全部商品'}
-          <span className="ml-2 text-sm font-normal text-gray-400">共 {total} 件</span>
-        </h1>
-        <div className="flex items-center gap-2 text-sm flex-wrap">
-          <Link href={buildSortLink('')} className={\`px-3 py-1 rounded ${!sort ? 'bg-red-500 text-white' : 'text-gray-600 hover:text-red-500'}\`}>默认</Link>
-          <Link href={buildSortLink('sales')} className={\`px-3 py-1 rounded ${sort === 'sales' ? 'bg-red-500 text-white' : 'text-gray-600 hover:text-red-500'}\`}>销量</Link>
-          <Link href={buildSortLink('price_asc')} className={\`px-3 py-1 rounded ${sort === 'price_asc' ? 'bg-red-500 text-white' : 'text-gray-600 hover:text-red-500'}\`}>价格↑</Link>
-          <Link href={buildSortLink('price_desc')} className={\`px-3 py-1 rounded ${sort === 'price_desc' ? 'bg-red-500 text-white' : 'text-gray-600 hover:text-red-500'}\`}>价格↓</Link>
+    <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--color-ink)]">
+            {keyword ? `"${keyword}" 的搜索结果` : categoryId ? '分类商品' : '全部商品'}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">共 {total} 件商品</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm bg-[var(--color-surface)] rounded-[var(--radius-sm)] border border-[var(--color-border-light)] p-0.5">
+          {[
+            { key: '', label: '默认' },
+            { key: 'sales', label: '销量' },
+            { key: 'price_asc', label: '价格 ↑' },
+            { key: 'price_desc', label: '价格 ↓' },
+          ].map((s) => (
+            <Link key={s.key} href={buildSortLink(s.key)}
+              className={`px-3 py-1.5 rounded-[var(--radius-sm)] transition-all duration-150 ${sort === s.key ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]'}`}>
+              {s.label}
+            </Link>
+          ))}
         </div>
       </div>
 
       {/* Price range filter */}
-      <div className="mb-4 flex items-center gap-2 text-sm">
-        <span className="text-gray-500">价格筛选：</span>
-        <input placeholder="最低价" type="number" className="w-24 rounded-lg border px-3 py-1.5" value={priceRange.min} onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })} />
-        <span className="text-gray-400">—</span>
-        <input placeholder="最高价" type="number" className="w-24 rounded-lg border px-3 py-1.5" value={priceRange.max} onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })} />
-        <button onClick={handlePriceFilter} className="rounded-lg bg-red-500 px-4 py-1.5 text-white hover:bg-red-600">筛选</button>
+      <div className="mb-6 flex items-center gap-2 text-sm flex-wrap">
+        <span className="text-[var(--color-muted)]">价格筛选</span>
+        <input placeholder="最低价" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] px-3 py-1.5 text-sm bg-[var(--color-surface)] placeholder:text-[var(--color-muted)]" value={priceRange.min} onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })} />
+        <span className="text-[var(--color-muted)]">—</span>
+        <input placeholder="最高价" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] px-3 py-1.5 text-sm bg-[var(--color-surface)] placeholder:text-[var(--color-muted)]" value={priceRange.max} onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })} />
+        <button onClick={handlePriceFilter} className="rounded-[var(--radius-sm)] border border-[var(--color-accent)] px-4 py-1.5 text-sm text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white transition-all duration-150 active:scale-[0.97]">筛选</button>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <div key={i} className="h-72 animate-pulse rounded-lg bg-gray-200" />)}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => <div key={i} className="h-[340px] animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-2)]" />)}
+        </div>
       ) : products.length === 0 ? (
-        <div className="py-20 text-center text-gray-400">暂无商品</div>
+        <div className="py-24 text-center">
+          <p className="text-4xl mb-3 opacity-40">📦</p>
+          <p className="text-[var(--color-muted)]">暂无商品</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((p: any) => (
-            <Link key={p.id} href={\`/products/${p.id}\`}>
-              <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
-                <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
-                  {(() => { const imgs = getImages(p); return imgs.length > 0 ? <img src={imgs[0]} alt="" className="h-full w-full object-cover" /> : <span className="text-gray-300 text-4xl">📦</span>; })()}
+            <Link key={p.id} href={`/products/${p.id}`}>
+              <Card accent className="overflow-hidden group h-full">
+                <div className="aspect-square bg-[var(--color-surface-2)] flex items-center justify-center overflow-hidden">
+                  {(() => { const imgs = getImages(p); return imgs.length > 0
+                    ? <img src={imgs[0]} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    : <span className="text-4xl text-[var(--color-muted)]/40">📦</span>; })()}
                 </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-medium text-gray-800 line-clamp-2">{p.name}</h3>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-lg font-bold text-red-500">¥{p.price}</span>
-                    <span className="text-xs text-gray-400">已售{p.sales}</span>
+                <div className="p-3.5">
+                  <h3 className="text-sm font-medium text-[var(--color-ink)] line-clamp-2 leading-snug">{p.name}</h3>
+                  <div className="mt-2.5 flex items-center justify-between">
+                    <span className="text-base font-bold text-[var(--color-accent)]">&yen;{p.price}</span>
+                    <span className="text-xs text-[var(--color-muted)]">已售 {p.sales}</span>
                   </div>
                 </div>
               </Card>

@@ -8,15 +8,20 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({ className, variant = 'primary', size = 'md', loading, children, disabled, ...props }: ButtonProps) {
-  const base = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+  const base = [
+    'inline-flex items-center justify-center font-medium transition-all duration-150',
+    'focus:outline-none focus:ring-2 focus:ring-offset-2',
+    'disabled:opacity-50 disabled:pointer-events-none',
+    'select-none',
+  ].join(' ');
   const variants = {
-    primary: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500',
-    outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    primary: 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] active:scale-[0.97] focus:ring-[var(--color-accent)] shadow-sm',
+    secondary: 'bg-[var(--color-surface-2)] text-[var(--color-ink)] hover:bg-[var(--color-border)] active:scale-[0.97] focus:ring-[var(--color-muted)]',
+    outline: 'border border-[var(--color-border)] text-[var(--color-ink)] hover:bg-[var(--color-surface-2)] active:scale-[0.97] focus:ring-[var(--color-muted)]',
+    ghost: 'text-[var(--color-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-2)] focus:ring-[var(--color-muted)]',
+    danger: 'bg-[var(--color-danger)] text-white hover:opacity-90 active:scale-[0.97] focus:ring-[var(--color-danger)]',
   };
-  const sizes = { sm: 'h-8 px-3 text-sm', md: 'h-10 px-4 text-sm', lg: 'h-12 px-6 text-base' };
+  const sizes = { sm: 'h-8 px-3 text-xs rounded-[var(--radius-sm)]', md: 'h-10 px-4 text-sm rounded-[var(--radius-md)]', lg: 'h-12 px-6 text-base rounded-[var(--radius-md)]' };
 
   return (
     <button className={cn(base, variants[variant], sizes[size], className)} disabled={disabled || loading} {...props}>
