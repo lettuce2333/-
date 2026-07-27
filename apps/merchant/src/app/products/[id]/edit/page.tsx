@@ -11,18 +11,31 @@ export default function EditProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: '', categoryId: 1, description: '' });
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [form, setForm] = useState({ name: '', categoryId: '', description: '' });
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [skus, setSkus] = useState<any[]>([]);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/login'); return; }
+    api.get('/categories/tree').then((res) => {
+      const data = Array.isArray(res) ? res : [];
+      const flat: { id: number; name: string }[] = [];
+      const flatten = (items: any[], prefix = '') => {
+        for (const item of items) {
+          flat.push({ id: item.id, name: prefix + item.name });
+          if (item.children) flatten(item.children, prefix + '  ');
+        }
+      };
+      flatten(data);
+      setCategories(flat);
+    });
     api.get('/merchant/products').then((res: any) => {
       const products = res.data || [];
       const product = products.find((p: any) => p.id === parseInt(id));
       if (product) {
-        setForm({ name: product.name, categoryId: product.categoryId, description: product.description || '' });
+        setForm({ name: product.name, categoryId: String(product.categoryId), description: product.description || '' });
         try { const imgs = JSON.parse(product.images || '[]'); setImages(Array.isArray(imgs) ? imgs : []); } catch { setImages([]); }
         setSkus(product.skus || []);
       }
@@ -53,6 +66,7 @@ export default function EditProductPage() {
   };
 
   const handleSubmit = async () => {
+    if (!form.categoryId) { toast('请选择类目', 'error'); return; }
     for (let i = 0; i < skus.length; i++) {
       const raw = typeof skus[i].specs === 'string' ? skus[i].specs : JSON.stringify(skus[i].specs || {});
       try {
@@ -65,7 +79,7 @@ export default function EditProductPage() {
     setSubmitting(true);
     try {
       await api.put(`/merchant/products/${id}`, {
-        name: form.name, categoryId: form.categoryId, description: form.description,
+        name: form.name, categoryId: parseInt(form.categoryId), description: form.description,
         images, price: skus[0]?.price || 0,
         skus: skus.map((s) => ({ specs: safeParseSpecs(s.specs), price: s.price, stock: s.stock }))
       });
@@ -81,8 +95,12 @@ export default function EditProductPage() {
         <Card className="p-6 space-y-4" accent>
           <Input label="商品名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div>
-            <label className="block text-sm font-medium text-[var(--color-ink)]">分类ID</label>
-            <input type="number" className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: parseInt(e.target.value) })} />
+            <label className="block text-sm font-medium text-[var(--color-ink)]">类目</label>
+            <select className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--color-ink)]">商品描述</label>

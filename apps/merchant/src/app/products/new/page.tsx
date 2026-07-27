@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Button, Card, Input } from '@zuoye/ui';
@@ -8,11 +8,28 @@ import { MerchantLayout } from '@/components/merchant-layout';
 
 export default function NewProductPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', categoryId: 1, description: '', price: '', totalStock: '' });
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '', totalStock: '' });
   const [skus, setSkus] = useState([{ specs: '{}', price: '', stock: '' }]);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    api.get('/categories/tree').then((res) => {
+      const data = Array.isArray(res) ? res : [];
+      const flat: { id: number; name: string }[] = [];
+      const flatten = (items: any[], prefix = '') => {
+        for (const item of items) {
+          flat.push({ id: item.id, name: prefix + item.name });
+          if (item.children) flatten(item.children, prefix + '  ');
+        }
+      };
+      flatten(data);
+      setCategories(flat);
+      if (flat.length > 0) setForm(f => ({ ...f, categoryId: String(flat[0].id) }));
+    });
+  }, []);
 
   const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,8 +64,9 @@ export default function NewProductPage() {
     const next = [...skus]; next[i] = { ...next[i], [field]: val }; setSkus(next);
   };
 
- const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!form.name) { toast('请输入商品名称', 'error'); return; }
+    if (!form.categoryId) { toast('请选择类目', 'error'); return; }
     // Validate SKU specs JSON
     for (let i = 0; i < skus.length; i++) {
       try {
@@ -62,7 +80,7 @@ export default function NewProductPage() {
     try {
       const res = await api.post('/merchant/products', {
         name: form.name,
-        categoryId: parseInt(form.categoryId as any),
+        categoryId: parseInt(form.categoryId),
         description: form.description,
         images: images,
         skus: skus.map((s) => ({
@@ -82,8 +100,12 @@ export default function NewProductPage() {
         <Card className="p-6 space-y-4" accent>
           <Input label="商品名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div>
-            <label className="block text-sm font-medium text-[var(--color-ink)]">类目ID</label>
-            <input type="number" className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: parseInt(e.target.value) })} />
+            <label className="block text-sm font-medium text-[var(--color-ink)]">类目</label>
+            <select className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--color-ink)]">商品描述</label>
