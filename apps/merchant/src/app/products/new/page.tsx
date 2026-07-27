@@ -60,15 +60,15 @@ export default function NewProductPage() {
     }
     setSubmitting(true);
     try {
-      await api.post('/merchant/products', {
+      const res = await api.post('/merchant/products', {
         name: form.name,
         categoryId: parseInt(form.categoryId as any),
         description: form.description,
         images: images,
         skus: skus.map((s) => ({
           specs: JSON.parse(s.specs || '{}'),
-          price: parseFloat(s.price) || 0,
-          stock: parseInt(s.stock) || 0,
+          price: parseFloat(s.price) || 0.01,
+          stock: parseInt(s.stock) || 1,
         })),
       });
       toast('商品创建成功', 'success');
