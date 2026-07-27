@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+﻿import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import prisma from '@zuoye/database';
@@ -51,14 +51,27 @@ export class AuthService {
     return { ...rest, roles };
   }
 
-  private generateTokens(user: any) {
-    const roles = user.roles?.map((r: any) => r.role) || ['buyer'];
+  private async generateTokens(user: any) {
+    const roleNames = user.roles?.map((r: any) => r.role) || ['buyer'];
+
+    // Look up shopId for merchant users
+    let shopId: number | null = null;
+    const isMerchant = roleNames.some(r => ['shop_owner', 'shop_cs', 'shop_warehouse'].includes(r));
+    if (isMerchant) {
+      const shop = await prisma.shop.findFirst({
+        where: { OR: [{ ownerId: user.id }, { members: { some: { userId: user.id } } }] },
+      });
+      if (shop) shopId = shop.id;
+    }
+
     const payload = {
       userId: user.id,
-      roles,
-      currentRole: roles[0],
+      roles: roleNames,
+      currentRole: roleNames[0],
+      shopId,
     };
+
     const accessToken = this.jwtService.sign(payload);
-    return { accessToken, user: { id: user.id, email: user.email, nickname: user.nickname, roles } };
+    return { accessToken, user: { id: user.id, email: user.email, nickname: user.nickname, roles: roleNames } };
   }
 }
