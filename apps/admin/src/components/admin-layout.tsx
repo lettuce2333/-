@@ -41,7 +41,7 @@ export function AdminLayout({ children, title }: { children: React.ReactNode; ti
           })}
         </nav>
         <div className="px-3 py-3 border-t border-white/5">
-          <button onClick={() => { localStorage.removeItem('token'); router.push('/login'); }}
+          <button onClick={() => { localStorage.removeItem('token'); window.location.href = 'http://localhost:3000/login'; }}
             className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3.5 py-2.5 text-sm text-[var(--color-sidebar-text)] hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors">
             <LogOut className="h-4 w-4" />
             <span>退出登录</span>
