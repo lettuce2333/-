@@ -16,16 +16,9 @@ export default function NewProductPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    api.get('/categories/tree').then((res) => {
+    api.get('/categories').then((res) => {
       const data = Array.isArray(res) ? res : [];
-      const flat: { id: number; name: string }[] = [];
-      const flatten = (items: any[], prefix = '') => {
-        for (const item of items) {
-          flat.push({ id: item.id, name: prefix + item.name });
-          if (item.children) flatten(item.children, prefix + '  ');
-        }
-      };
-      flatten(data);
+      const flat: { id: number; name: string }[] = data.map((c: any) => ({ id: c.id, name: c.name }));
       setCategories(flat);
       if (flat.length > 0) setForm(f => ({ ...f, categoryId: String(flat[0].id) }));
     });

@@ -19,16 +19,9 @@ export default function EditProductPage() {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/login'); return; }
-    api.get('/categories/tree').then((res) => {
+    api.get('/categories').then((res) => {
       const data = Array.isArray(res) ? res : [];
-      const flat: { id: number; name: string }[] = [];
-      const flatten = (items: any[], prefix = '') => {
-        for (const item of items) {
-          flat.push({ id: item.id, name: prefix + item.name });
-          if (item.children) flatten(item.children, prefix + '  ');
-        }
-      };
-      flatten(data);
+      const flat: { id: number; name: string }[] = data.map((c: any) => ({ id: c.id, name: c.name }));
       setCategories(flat);
     });
     api.get('/merchant/products').then((res: any) => {
