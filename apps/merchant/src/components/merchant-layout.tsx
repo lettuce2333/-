@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Package, ShoppingBag, MessageSquare, Settings, BarChart3, Store, Star, Truck, LogOut } from 'lucide-react';
+import { Package, ShoppingBag, MessageSquare, Settings, BarChart3, Store, Star, Truck, LogOut, ExternalLink } from 'lucide-react';
 
 const nav = [
   { href: '/dashboard', label: '工作台', icon: BarChart3 },
@@ -41,6 +41,11 @@ export function MerchantLayout({ children, title }: { children: React.ReactNode;
           })}
         </nav>
         <div className="px-3 py-3 border-t border-white/5">
+          <a href="http://localhost:3000"
+            className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3.5 py-2.5 text-sm text-[var(--color-sidebar-text)] hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors mb-1">
+            <ExternalLink className="h-4 w-4" />
+            <span>返回首页</span>
+          </a>
           <button onClick={() => { localStorage.removeItem('token'); window.location.href = 'http://localhost:3000/login'; }}
             className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3.5 py-2.5 text-sm text-[var(--color-sidebar-text)] hover:bg-[var(--color-sidebar-hover)] hover:text-white transition-colors">
             <LogOut className="h-4 w-4" />
