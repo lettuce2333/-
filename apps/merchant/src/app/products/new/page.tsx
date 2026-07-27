@@ -67,8 +67,8 @@ export default function NewProductPage() {
         images: images,
         skus: skus.map((s) => ({
           specs: JSON.parse(s.specs || '{}'),
-          price: parseFloat(s.price),
-          stock: parseInt(s.stock),
+          price: parseFloat(s.price) || 0,
+          stock: parseInt(s.stock) || 0,
         })),
       });
       toast('商品创建成功', 'success');
