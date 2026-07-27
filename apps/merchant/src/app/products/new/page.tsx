@@ -47,8 +47,17 @@ export default function NewProductPage() {
     const next = [...skus]; next[i] = { ...next[i], [field]: val }; setSkus(next);
   };
 
-  const handleSubmit = async () => {
+ const handleSubmit = async () => {
     if (!form.name) { toast('请输入商品名称', 'error'); return; }
+    // Validate SKU specs JSON
+    for (let i = 0; i < skus.length; i++) {
+      try {
+        JSON.parse(skus[i].specs || '{}');
+      } catch {
+        toast(`第 ${i + 1} 个 SKU 的规格格式不正确，请填写合法的 JSON，如 {"颜色":"红"}`, 'error');
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       await api.post('/merchant/products', {

@@ -47,14 +47,27 @@ export default function EditProductPage() {
     const next = [...skus]; next[i] = { ...next[i], [field]: val }; setSkus(next);
   };
   const removeSku = (i: number) => setSkus(skus.filter((_, idx) => idx !== i));
+  const safeParseSpecs = (specs: any) => {
+    if (typeof specs === 'object' && specs !== null) return specs;
+    try { return JSON.parse(specs || '{}'); } catch { return {}; }
+  };
 
   const handleSubmit = async () => {
+    for (let i = 0; i < skus.length; i++) {
+      const raw = typeof skus[i].specs === 'string' ? skus[i].specs : JSON.stringify(skus[i].specs || {});
+      try {
+        JSON.parse(raw);
+      } catch {
+        toast(`第 ${i + 1} 个 SKU 的规格格式不正确，请填写合法的 JSON，如 {"颜色":"红"}`, 'error');
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       await api.put(`/merchant/products/${id}`, {
         name: form.name, categoryId: form.categoryId, description: form.description,
         images, price: skus[0]?.price || 0,
-        skus: skus.map((s) => ({ specs: JSON.parse(s.specs || '{}'), price: s.price, stock: s.stock }))
+        skus: skus.map((s) => ({ specs: safeParseSpecs(s.specs), price: s.price, stock: s.stock }))
       });
       toast('保存成功', 'success'); router.push('/products');
     } catch (err: any) { toast(err.message, 'error'); } finally { setSubmitting(false); }
