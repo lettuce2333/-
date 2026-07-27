@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Button, Card, Badge } from '@zuoye/ui';
+import { toast } from '@/components/toaster';
 import { MerchantLayout } from '@/components/merchant-layout';
 
 const pl: Record<string, string> = { draft: '草稿', active: '在售', rejected: '驳回', archived: '归档' };
@@ -16,8 +17,22 @@ export default function MerchantProductsPage() {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/login'); return; }
-    api.get('/merchant/products').then((res) => { setProducts(res.data || []); setLoading(false); });
+    loadProducts();
   }, [router]);
+
+  const loadProducts = () => {
+    api.get('/merchant/products').then((res) => { setProducts(res.data || []); setLoading(false); });
+  };
+
+  const submitProduct = async (id: number) => {
+    try {
+      await api.post(`/merchant/products/${id}/submit`);
+      toast('商品已上架', 'success');
+      loadProducts();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
+  };
 
   return (
     <MerchantLayout title="商品管理">
@@ -37,6 +52,9 @@ export default function MerchantProductsPage() {
                   <p className="mt-1 text-xs text-[var(--color-muted)]">&yen;{p.price} | 库存: {p.totalStock} | 销量: {p.sales}</p>
                 </div>
                 <Badge variant={(pv[p.status] || 'default') as any}>{pl[p.status] || p.status}</Badge>
+                {p.status === 'draft' && (
+                  <Button size="sm" onClick={() => submitProduct(p.id)}>上架</Button>
+                )}
                 <Link href={`/products/${p.id}/edit`}><Button variant="outline" size="sm">编辑</Button></Link>
               </Card>
             ))}
