@@ -19,15 +19,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
-    // Look up shopId if not already in token
     let shopId = payload.shopId || null;
     if (!shopId) {
       const isMerchant = payload.roles?.some(r => ['shop_owner', 'shop_cs', 'shop_warehouse'].includes(r));
       if (isMerchant) {
-        const shop = await prisma.shop.findFirst({
-          where: { OR: [{ ownerId: payload.userId }, { members: { some: { userId: payload.userId } } }] },
-        });
-        if (shop) shopId = shop.id;
+        // Use simpler query to avoid SQLite complex join issues
+        const member = await prisma.shopMember.findFirst({ where: { userId: payload.userId } });
+        if (member) shopId = member.shopId;
       }
     }
 
