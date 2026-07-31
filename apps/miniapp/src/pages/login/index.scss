@@ -1,0 +1,75 @@
+.login {
+  min-height: 100vh;
+  padding: 60rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.login__hero {
+  padding: 48rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.login__title {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.login__subtitle {
+  font-size: 28rpx;
+  color: #8a8580;
+}
+
+.login__card {
+  margin-top: 40rpx;
+  background: #fff;
+  border-radius: 28rpx;
+  padding: 40rpx 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(26, 24, 22, 0.06);
+}
+
+.field {
+  margin-bottom: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.field__label {
+  font-size: 26rpx;
+  color: #1a1816;
+  font-weight: 500;
+}
+
+.field__input {
+  height: 88rpx;
+  background: #f8f6f3;
+  border: 1rpx solid #e8e3dc;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+}
+
+.login__btn {
+  margin-top: 20rpx;
+  height: 92rpx;
+  background: #b91c1c;
+  color: #fff;
+  border-radius: 46rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login__test {
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #2563eb;
+  padding: 12rpx;
+}

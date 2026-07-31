@@ -33,14 +33,14 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (user && product) {
-      api.get(\`/favorites/${id}/check\`).then((res) => setFavorited(res.favorited)).catch(() => {});
+      api.get(`/favorites/${id}/check`).then((res) => setFavorited(res.favorited)).catch(() => {});
     }
   }, [user, product, id]);
 
   const toggleFavorite = async () => {
     if (!user) { router.push("/login"); return; }
     try {
-      const res = await api.post(\`/favorites/${id}/toggle\`);
+      const res = await api.post(`/favorites/${id}/toggle`);
       setFavorited(res.favorited);
       toast(res.favorited ? "已收藏" : "已取消收藏", "success");
     } catch (err: any) { toast(err.message, "error"); }
@@ -148,8 +148,8 @@ export default function ProductDetailPage() {
 
           {/* Favorite */}
           <div className="mt-4 flex items-center gap-2">
-            <button onClick={toggleFavorite} className={\`flex items-center gap-1 text-sm \`.concat(favorited ? 'text-red-500' : 'text-gray-400', ' hover:text-red-500')}>
-              <Heart className={\`h-5 w-5 \`.concat(favorited ? 'fill-red-500' : '')} />
+            <button onClick={toggleFavorite} className={`flex items-center gap-1 text-sm `.concat(favorited ? 'text-red-500' : 'text-gray-400', ' hover:text-red-500')}>
+              <Heart className={`h-5 w-5 `.concat(favorited ? 'fill-red-500' : '')} />
               {favorited ? '已收藏' : '收藏'}
             </button>
           </div>

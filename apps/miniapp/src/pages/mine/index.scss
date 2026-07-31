@@ -1,0 +1,103 @@
+.mine {
+  min-height: 100vh;
+  padding: 24rpx;
+}
+
+.mine__hero {
+  background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+  border-radius: 28rpx;
+  padding: 48rpx 36rpx;
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+}
+
+.mine__avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 48rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mine__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.mine__name {
+  color: #fff;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.mine__email {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 24rpx;
+}
+
+.mine__menu {
+  margin-top: 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 8rpx 24rpx;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #f0ece6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.menu-item__icon {
+  font-size: 36rpx;
+}
+
+.menu-item__label {
+  flex: 1;
+  font-size: 30rpx;
+  color: #1a1816;
+}
+
+.menu-item__arrow {
+  color: #8a8580;
+  font-size: 36rpx;
+}
+
+.mine__login-btn {
+  margin-top: 24rpx;
+  height: 92rpx;
+  background: #b91c1c;
+  color: #fff;
+  border-radius: 46rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.mine__logout {
+  margin-top: 24rpx;
+  height: 92rpx;
+  background: #fff;
+  color: #dc2626;
+  border: 1rpx solid #e8e3dc;
+  border-radius: 46rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+}

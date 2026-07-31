@@ -29,7 +29,7 @@ export default function NotificationsPage() {
   }, [user, router]);
 
   const markRead = async (id: number) => {
-    await api.post(\`/notifications/${id}/read\`);
+    await api.post(`/notifications/${id}/read`);
     setItems(items.map((n) => n.id === id ? { ...n, isRead: true } : n));
   };
 
@@ -62,7 +62,7 @@ export default function NotificationsPage() {
       ) : (
         <div className="space-y-2">
           {items.map((n) => (
-            <Card key={n.id} className={\`px-6 py-4 flex items-center gap-4 ${!n.isRead ? 'border-l-4 border-l-red-500 bg-red-50/30' : '\`}>
+            <Card key={n.id} className={`px-6 py-4 flex items-center gap-4 ${!n.isRead ? 'border-l-4 border-l-red-500 bg-red-50/30' : ''}`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-400">{typeLabels[n.type] || n.type}</span>
