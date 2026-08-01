@@ -24,3 +24,4 @@ Thumbs.db
 # Codex
 .codex/
 .agents/
+apps/server/dist/
