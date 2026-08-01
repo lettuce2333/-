@@ -88,15 +88,14 @@ export class OrdersService {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: {
-          items: { include: { product: { select: { id: true, name: true } } } },
-          shop: { select: { id: true, name: true } },
-          logistics: true,
-          payments: true,
-        },
       }),
       prisma.order.count({ where }),
     ]);
+    for (const order of data) {
+      order.items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+      order.shop = await prisma.shop.findUnique({ where: { id: order.shopId } });
+      order.logistics = await prisma.logistics.findUnique({ where: { orderId: order.id } });
+    }
     return { data, total, page, pageSize };
   }
 
@@ -170,12 +169,9 @@ export class OrdersService {
     if (!order) throw new NotFoundException('订单不存在');
     if (order.status !== 'SHIPPED' && order.status !== 'DELIVERED') throw new BadRequestException('订单未发货');
 
-    return prisma.$transaction(async (tx) => {
-      await tx.order.update({ where: { id: orderId }, data: { status: 'RECEIVED', receivedAt: new Date() } });
-      await tx.orderStatusLog.create({
-        data: { orderId, fromStatus: order.status, toStatus: 'RECEIVED', operator: 'user', remark: '用户确认收货' },
-      });
-    });
+    await prisma.order.update({ where: { id: orderId }, data: { status: 'RECEIVED', receivedAt: new Date().toISOString() } });
+    await prisma.orderStatusLog.create({ data: { orderId, fromStatus: order.status, toStatus: 'RECEIVED', operator: 'user', remark: '用户确认收货' } });
+    return prisma.order.findUnique({ where: { id: orderId } });
   }
 
   // === Merchant order queries ===
@@ -191,14 +187,13 @@ export class OrdersService {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: {
-          items: true,
-          logistics: true,
-          payments: true,
-        },
       }),
       prisma.order.count({ where }),
     ]);
+    for (const order of data) {
+      order.items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+      order.logistics = await prisma.logistics.findUnique({ where: { orderId: order.id } });
+    }
     return { data, total, page, pageSize };
   }
 

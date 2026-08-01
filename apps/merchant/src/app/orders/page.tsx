@@ -72,6 +72,11 @@ export default function MerchantOrdersPage() {
                     </div>
                   ))}
                 </div>
+                {order.logistics && (
+                  <div className="border-t border-[var(--color-border-light)] px-5 py-2 text-xs text-[var(--color-muted)]">
+                    物流：{order.logistics.company} · {order.logistics.trackingNo}
+                  </div>
+                )}
                 <div className="flex items-center justify-between border-t border-[var(--color-border-light)] px-5 py-3">
                   <span className="text-sm text-[var(--color-muted)]">合计：<span className="font-bold text-[var(--color-ink)]">&yen;{order.totalAmount}</span></span>
                   <div className="flex gap-2">
