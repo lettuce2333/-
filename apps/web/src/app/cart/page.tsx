@@ -75,7 +75,7 @@ export default function CartPage() {
                 <Link href={`/products/${item.productId}`} className="text-sm font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)] transition-colors line-clamp-1">
                   {item.product?.name}
                 </Link>
-                <p className="mt-1 text-xs text-[var(--color-muted)]">{item.sku?.specs ? Object.values(JSON.parse(item.sku.specs)).join(' / ') : ''}</p>
+                <p className="mt-1 text-xs text-[var(--color-muted)]">{item.sku?.specs || ''}</p>
                 <p className="mt-1.5 text-sm font-bold text-[var(--color-accent)]">&yen;{item.sku?.price || 0}</p>
               </div>
               <div className="flex items-center rounded-[var(--radius-sm)] border border-[var(--color-border)] overflow-hidden">

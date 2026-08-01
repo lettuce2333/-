@@ -12,10 +12,10 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-  const [form, setForm] = useState({ name: '', categoryId: '', description: '' });
+  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '' });
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [skus, setSkus] = useState<any[]>([]);
+  const [variants, setVariants] = useState([{ name: '', stock: '' }]);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/login'); return; }
@@ -28,9 +28,12 @@ export default function EditProductPage() {
       const products = res.data || [];
       const product = products.find((p: any) => p.id === parseInt(id));
       if (product) {
-        setForm({ name: product.name, categoryId: String(product.categoryId), description: product.description || '' });
+        setForm({ name: product.name, categoryId: String(product.categoryId), description: product.description || '', price: String(product.price || '') });
         try { const imgs = JSON.parse(product.images || '[]'); setImages(Array.isArray(imgs) ? imgs : []); } catch { setImages([]); }
-        setSkus(product.skus || []);
+        const skus = product.skus || [];
+        if (skus.length > 0) {
+          setVariants(skus.map((s: any) => ({ name: s.specs || '', stock: String(s.stock || 0) })));
+        }
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -41,40 +44,29 @@ export default function EditProductPage() {
     setUploading(true);
     try {
       const token = localStorage.getItem('token');
-      const form = new FormData(); form.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form });
+      const fm = new FormData(); fm.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fm });
       const data = await res.json();
       setImages([...images, data.url]);
     } catch (err: any) { toast(err.message, 'error'); } finally { setUploading(false); e.target.value = ''; }
   };
 
-  const addSku = () => setSkus([...skus, { specs: '{}', price: 0, stock: 0 }]);
-  const updateSku = (i: number, field: string, val: any) => {
-    const next = [...skus]; next[i] = { ...next[i], [field]: val }; setSkus(next);
+  const addVariant = () => setVariants([...variants, { name: '', stock: '' }]);
+  const updateVariant = (i: number, field: string, val: string) => {
+    const next = [...variants]; next[i] = { ...next[i], [field]: val }; setVariants(next);
   };
-  const removeSku = (i: number) => setSkus(skus.filter((_, idx) => idx !== i));
-  const safeParseSpecs = (specs: any) => {
-    if (typeof specs === 'object' && specs !== null) return specs;
-    try { return JSON.parse(specs || '{}'); } catch { return {}; }
-  };
+  const removeVariant = (i: number) => setVariants(variants.filter((_, idx) => idx !== i));
 
   const handleSubmit = async () => {
     if (!form.categoryId) { toast('请选择类目', 'error'); return; }
-    for (let i = 0; i < skus.length; i++) {
-      const raw = typeof skus[i].specs === 'string' ? skus[i].specs : JSON.stringify(skus[i].specs || {});
-      try {
-        JSON.parse(raw);
-      } catch {
-        toast(`第 ${i + 1} 个 SKU 的规格格式不正确，请填写合法的 JSON，如 {"颜色":"红"}`, 'error');
-        return;
-      }
-    }
+    const validVariants = variants.filter(v => v.name.trim());
+    if (validVariants.length === 0) { toast('请至少添加一个种类', 'error'); return; }
     setSubmitting(true);
     try {
       await api.put(`/merchant/products/${id}`, {
         name: form.name, categoryId: parseInt(form.categoryId), description: form.description,
-        images, price: skus[0]?.price || 0,
-        skus: skus.map((s) => ({ specs: safeParseSpecs(s.specs), price: s.price, stock: s.stock }))
+        images, price: parseFloat(form.price) || 0,
+        variants: validVariants.map(v => ({ name: v.name.trim(), stock: parseInt(v.stock) || 0 })),
       });
       toast('保存成功', 'success'); router.push('/products');
     } catch (err: any) { toast(err.message, 'error'); } finally { setSubmitting(false); }
@@ -90,11 +82,27 @@ export default function EditProductPage() {
           <div>
             <label className="block text-sm font-medium text-[var(--color-ink)]">类目</label>
             <select className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
             </select>
           </div>
+          <Input label="价格" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+
+          <div className="border-t border-[var(--color-border-light)] pt-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-[var(--color-ink)]">种类</span>
+              <Button size="sm" variant="outline" onClick={addVariant}>添加种类</Button>
+            </div>
+            {variants.map((v, i) => (
+              <div key={i} className="mb-2 flex gap-2 items-center">
+                <input placeholder="种类名称" className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} />
+                <input placeholder="库存" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} />
+                {variants.length > 1 && (
+                  <button onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-600 text-sm">删除</button>
+                )}
+              </div>
+            ))}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-[var(--color-ink)]">商品描述</label>
             <textarea className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -114,24 +122,7 @@ export default function EditProductPage() {
               </label>
             </div>
           </div>
-          <div className="border-t border-[var(--color-border-light)] pt-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--color-ink)]">SKU ({skus.length})</span>
-              <Button size="sm" variant="outline" onClick={addSku}>添加SKU</Button>
-            </div>
-            {skus.map((sku, i) => (
-              <div key={i} className="mb-2 flex gap-2 items-center">
-                <input placeholder='规格JSON' className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={sku.specs} onChange={(e) => updateSku(i, 'specs', e.target.value)} />
-                <input placeholder="价格" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={sku.price} onChange={(e) => updateSku(i, 'price', parseFloat(e.target.value) || 0)} />
-                <input placeholder="库存" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={sku.stock} onChange={(e) => updateSku(i, 'stock', parseInt(e.target.value) || 0)} />
-                <button onClick={() => removeSku(i)} className="text-[var(--color-muted)] hover:text-[var(--color-danger)] text-lg">×</button>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-3">
-            <Button onClick={handleSubmit} loading={submitting}>保存</Button>
-            <Button variant="outline" onClick={() => router.push('/products')}>取消</Button>
-          </div>
+          <Button onClick={handleSubmit} loading={submitting}>保存商品</Button>
         </Card>
       </div>
     </MerchantLayout>

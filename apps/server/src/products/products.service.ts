@@ -33,16 +33,11 @@ export class ProductsService {
   }
 
   async findOne(id: number) {
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        skus: true,
-        shop: { select: { id: true, name: true, logo: true } },
-        category: { select: { id: true, name: true } },
-        reviews: { take: 5, orderBy: { createdAt: 'desc' }, include: { user: { select: { nickname: true, avatar: true } } } },
-      },
-    });
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundException('商品不存在');
+    product.skus = await prisma.productSku.findMany({ where: { productId: id } });
+    product.shop = await prisma.shop.findUnique({ where: { id: product.shopId } });
+    product.category = await prisma.category.findUnique({ where: { id: product.categoryId } });
     return product;
   }
 
@@ -58,10 +53,12 @@ export class ProductsService {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { skus: true, category: { select: { name: true } } },
       }),
       prisma.product.count({ where }),
     ]);
+    for (const p of data) {
+      p.skus = await prisma.productSku.findMany({ where: { productId: p.id } });
+    }
     return { data, total, page, pageSize };
   }
 
@@ -69,26 +66,35 @@ export class ProductsService {
     const member = await prisma.shopMember.findFirst({ where: { userId, shopId, role: { in: ['shop_owner'] } } });
     if (!member) throw new ForbiddenException('无权操作');
 
-    const { skus, ...productData } = data;
+    const variantList = Array.isArray(data.variants) ? data.variants : [];
+    const totalStock = variantList.reduce((sum: number, v: any) => sum + (parseInt(v.stock) || 0), 0);
+    const variantsLabel = variantList.map((v: any) => v.name).join(' / ');
+
     const product = await prisma.product.create({
       data: {
-        ...productData,
         shopId,
-        images: JSON.stringify(productData.images || []),
-        price: skus?.[0]?.price || 0,
-        totalStock: skus?.reduce((sum: number, s: any) => sum + (s.stock || 0), 0) || 0,
+        name: data.name,
+        categoryId: data.categoryId,
+        description: data.description || '',
+        images: JSON.stringify(data.images || []),
+        price: data.price || 0,
+        totalStock,
+        variants: variantsLabel,
         status: 'draft',
-        skus: skus ? {
-          create: skus.map((s: any) => ({
-            specs: JSON.stringify(s.specs || {}),
-            price: s.price,
-            stock: s.stock,
-            image: s.image,
-          })),
-        } : undefined,
       },
-      include: { skus: true },
     });
+
+    // Create SKU for each variant
+    for (const v of variantList) {
+      await prisma.productSku.create({
+        data: {
+          productId: product.id,
+          specs: v.name || '',
+          price: data.price || 0,
+          stock: parseInt(v.stock) || 0,
+        },
+      });
+    }
     return product;
   }
 
@@ -99,25 +105,35 @@ export class ProductsService {
     const product = await prisma.product.findFirst({ where: { id: productId, shopId } });
     if (!product) throw new NotFoundException('商品不存在');
 
-    const { skus, ...productData } = data;
-    if (productData.images) productData.images = JSON.stringify(productData.images);
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.images !== undefined) updateData.images = JSON.stringify(data.images);
+    if (data.price !== undefined) updateData.price = data.price;
 
-    if (skus) {
+    const variantList = Array.isArray(data.variants) ? data.variants : [];
+    if (variantList.length > 0) {
+      const totalStock = variantList.reduce((sum: number, v: any) => sum + (parseInt(v.stock) || 0), 0);
+      const variantsLabel = variantList.map((v: any) => v.name).join(' / ');
+      updateData.totalStock = totalStock;
+      updateData.variants = variantsLabel;
+
+      // Recreate SKUs
       await prisma.productSku.deleteMany({ where: { productId } });
-      await prisma.productSku.createMany({
-        data: skus.map((s: any) => ({
-          productId,
-          specs: JSON.stringify(s.specs || {}),
-          price: s.price,
-          stock: s.stock,
-          image: s.image,
-        })),
-      });
-      productData.price = skus[0]?.price || product.price;
-      productData.totalStock = skus.reduce((sum: number, s: any) => sum + (s.stock || 0), 0);
+      for (const v of variantList) {
+        await prisma.productSku.create({
+          data: {
+            productId,
+            specs: v.name || '',
+            price: data.price || product.price,
+            stock: parseInt(v.stock) || 0,
+          },
+        });
+      }
     }
 
-    return prisma.product.update({ where: { id: productId }, data: productData, include: { skus: true } });
+    return prisma.product.update({ where: { id: productId }, data: updateData });
   }
 
   async submitForReview(shopId: number, userId: number, productId: number) {

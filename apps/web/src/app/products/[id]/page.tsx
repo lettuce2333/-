@@ -113,10 +113,10 @@ export default function ProductDetailPage() {
             </p>
           </div>
 
-          {/* SKU selection */}
+          {/* Variant selection */}
           {product.skus?.length > 0 && (
             <div className="mt-4">
-              <p className="mb-2 text-sm text-gray-600">选择规格：</p>
+              <p className="mb-2 text-sm text-gray-600">选择种类：</p>
               <div className="flex flex-wrap gap-2">
                 {product.skus.map((sku: any) => (
                   <button
@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    {Object.values(JSON.parse(sku.specs || '{}')).join(' / ')}
+                    {sku.specs || ''}（库存{sku.stock}）
                   </button>
                 ))}
               </div>
@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
               <span className="min-w-[3rem] text-center">{qty}</span>
               <button onClick={() => setQty(qty + 1)} className="px-3 py-1 text-gray-500 hover:bg-gray-100">+</button>
             </div>
-            <span className="text-xs text-gray-400">库存 {selectedSku?.stock || 0} 件</span>
+            <span className="text-xs text-gray-400">库存 {selectedSku?.stock || product.totalStock || 0} 件</span>
           </div>
 
           {/* Favorite */}

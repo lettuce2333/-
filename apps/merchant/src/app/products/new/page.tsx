@@ -9,8 +9,8 @@ import { MerchantLayout } from '@/components/merchant-layout';
 export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '', totalStock: '' });
-  const [skus, setSkus] = useState([{ specs: '{}', price: '', stock: '' }]);
+  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '' });
+  const [variants, setVariants] = useState([{ name: '', stock: '' }]);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -30,13 +30,9 @@ export default function NewProductPage() {
     setUploading(true);
     try {
       const token = localStorage.getItem("token");
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: form,
-      });
+      const fm = new FormData();
+      fm.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fm });
       if (!res.ok) throw new Error("上传失败");
       const data = await res.json();
       setImages([...images, data.url]);
@@ -48,38 +44,30 @@ export default function NewProductPage() {
     }
   };
 
-  const removeImage = (idx: number) => {
-    setImages(images.filter((_, i) => i !== idx));
-  };
+  const removeImage = (idx: number) => setImages(images.filter((_, i) => i !== idx));
 
-  const addSku = () => setSkus([...skus, { specs: '{}', price: '', stock: '' }]);
-  const updateSku = (i: number, field: string, val: string) => {
-    const next = [...skus]; next[i] = { ...next[i], [field]: val }; setSkus(next);
+  const addVariant = () => setVariants([...variants, { name: '', stock: '' }]);
+  const removeVariant = (i: number) => setVariants(variants.filter((_, idx) => idx !== i));
+  const updateVariant = (i: number, field: string, val: string) => {
+    const next = [...variants]; next[i] = { ...next[i], [field]: val }; setVariants(next);
   };
 
   const handleSubmit = async () => {
     if (!form.name) { toast('请输入商品名称', 'error'); return; }
     if (!form.categoryId) { toast('请选择类目', 'error'); return; }
-    // Validate SKU specs JSON
-    for (let i = 0; i < skus.length; i++) {
-      try {
-        JSON.parse(skus[i].specs || '{}');
-      } catch {
-        toast(`第 ${i + 1} 个 SKU 的规格格式不正确，请填写合法的 JSON，如 {"颜色":"红"}`, 'error');
-        return;
-      }
-    }
+    const validVariants = variants.filter(v => v.name.trim());
+    if (validVariants.length === 0) { toast('请至少添加一个种类', 'error'); return; }
     setSubmitting(true);
     try {
-      const res = await api.post('/merchant/products', {
+      await api.post('/merchant/products', {
         name: form.name,
         categoryId: parseInt(form.categoryId),
         description: form.description,
+        price: parseFloat(form.price) || 0.01,
         images: images,
-        skus: skus.map((s) => ({
-          specs: JSON.parse(s.specs || '{}'),
-          price: parseFloat(s.price) || 0.01,
-          stock: parseInt(s.stock) || 1,
+        variants: validVariants.map(v => ({
+          name: v.name.trim(),
+          stock: parseInt(v.stock) || 0,
         })),
       });
       toast('商品创建成功', 'success');
@@ -95,11 +83,28 @@ export default function NewProductPage() {
           <div>
             <label className="block text-sm font-medium text-[var(--color-ink)]">类目</label>
             <select className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
             </select>
           </div>
+          <Input label="价格" type="number" placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+
+          {/* Variants sub-form */}
+          <div className="border-t border-[var(--color-border-light)] pt-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-[var(--color-ink)]">种类</span>
+              <Button size="sm" variant="outline" onClick={addVariant}>添加种类</Button>
+            </div>
+            {variants.map((v, i) => (
+              <div key={i} className="mb-2 flex gap-2 items-center">
+                <input placeholder="种类名称（如：银色256GB）" className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} />
+                <input placeholder="库存" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} />
+                {variants.length > 1 && (
+                  <button onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-600 text-sm">删除</button>
+                )}
+              </div>
+            ))}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-[var(--color-ink)]">商品描述</label>
             <textarea className="mt-1 block w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-sm" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -114,27 +119,10 @@ export default function NewProductPage() {
                 </div>
               ))}
               <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-[var(--radius-sm)] border-2 border-dashed border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-muted)]">
-                {uploading ? (
-                  <span className="text-xs animate-pulse">上传中...</span>
-                ) : (
-                  <><span className="text-2xl">+</span><span className="mt-1 text-xs">上传图片</span></>
-                )}
+                {uploading ? <span className="text-xs animate-pulse">上传中...</span> : <><span className="text-2xl">+</span><span className="mt-1 text-xs">上传图片</span></>}
                 <input type="file" accept="image/*" onChange={uploadImage} className="hidden" />
               </label>
             </div>
-          </div>
-          <div className="border-t border-[var(--color-border-light)] pt-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--color-ink)]">SKU</span>
-              <Button size="sm" variant="outline" onClick={addSku}>添加SKU</Button>
-            </div>
-            {skus.map((sku, i) => (
-              <div key={i} className="mb-2 flex gap-2">
-                <input placeholder='规格JSON' className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={sku.specs} onChange={(e) => updateSku(i, 'specs', e.target.value)} />
-                <input placeholder="价格" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={sku.price} onChange={(e) => updateSku(i, 'price', e.target.value)} />
-                <input placeholder="库存" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={sku.stock} onChange={(e) => updateSku(i, 'stock', e.target.value)} />
-              </div>
-            ))}
           </div>
           <Button onClick={handleSubmit} loading={submitting}>保存商品</Button>
         </Card>

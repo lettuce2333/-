@@ -14,6 +14,7 @@ export class CartController {
   }
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   addItem(@CurrentUser('userId') userId: number | undefined, @Body() body: any) {
     return this.cartService.addItem(userId, body.guestId, body);
   }

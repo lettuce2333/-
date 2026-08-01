@@ -9,14 +9,12 @@ export class CartService {
     else if (guestId) where.guestId = guestId;
     else return [];
 
-    return prisma.cartItem.findMany({
-      where,
-      include: {
-        product: { select: { id: true, name: true, images: true, status: true } },
-        sku: true,
-      },
-      orderBy: { id: 'desc' },
-    });
+    const items = await prisma.cartItem.findMany({ where, orderBy: { id: 'desc' } });
+    for (const item of items) {
+      item.product = await prisma.product.findUnique({ where: { id: item.productId } });
+      item.sku = await prisma.productSku.findUnique({ where: { id: item.skuId } });
+    }
+    return items;
   }
 
   async addItem(userId: number | undefined, guestId: string | undefined, data: { productId: number; skuId: number; quantity: number }) {
