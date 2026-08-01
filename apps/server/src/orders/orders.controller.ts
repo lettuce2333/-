@@ -56,7 +56,7 @@ export class OrdersController {
   @Post('merchant/orders/:id/ship')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('shop_owner', 'shop_warehouse')
-  ship(@Param('id') id: string, @CurrentUser('shopId') shopId: number) {
-    return this.ordersService.ship(parseInt(id), shopId);
+  ship(@Param('id') id: string, @CurrentUser('shopId') shopId: number, @Body() body?: { company?: string; trackingNo?: string }) {
+    return this.ordersService.ship(parseInt(id), shopId, body?.company, body?.trackingNo);
   }
 }

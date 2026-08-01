@@ -67,6 +67,12 @@ export class OrdersService {
       orders.push(order);
     }
 
+    // Clear ordered items from cart
+    const orderedSkuIds = data.items.map(i => i.skuId);
+    for (const skuId of orderedSkuIds) {
+      await prisma.cartItem.deleteMany({ where: { userId, skuId } });
+    }
+
     return orders;
   }
 
@@ -145,20 +151,18 @@ export class OrdersService {
     });
   }
 
-  async ship(orderId: number, shopId: number) {
+  async ship(orderId: number, shopId: number, company?: string, trackingNo?: string) {
     const order = await prisma.order.findFirst({ where: { id: orderId, shopId } });
     if (!order) throw new NotFoundException('订单不存在');
     if (order.status !== 'PAID') throw new BadRequestException('订单未付款');
 
-    const trackingNo = `SF${Date.now()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const courier = company || '顺丰速运';
+    const trackNo = trackingNo || `SF${Date.now()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-    return prisma.$transaction(async (tx) => {
-      await tx.order.update({ where: { id: orderId }, data: { status: 'SHIPPED', shippedAt: new Date() } });
-      await tx.logistics.create({ data: { orderId, company: '模拟物流', trackingNo, status: 'shipped', shippedAt: new Date() } });
-      await tx.orderStatusLog.create({
-        data: { orderId, fromStatus: 'PAID', toStatus: 'SHIPPED', operator: 'shop', remark: `发货，单号: ${trackingNo}` },
-      });
-    });
+    await prisma.order.update({ where: { id: orderId }, data: { status: 'SHIPPED', shippedAt: new Date().toISOString() } });
+    await prisma.logistics.create({ data: { orderId, company: courier, trackingNo: trackNo, status: 'shipped', shippedAt: new Date().toISOString() } });
+    await prisma.orderStatusLog.create({ data: { orderId, fromStatus: 'PAID', toStatus: 'SHIPPED', operator: 'shop', remark: `发货，${courier}: ${trackNo}` } });
+    return prisma.order.findUnique({ where: { id: orderId } });
   }
 
   async receive(orderId: number, userId: number) {

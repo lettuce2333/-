@@ -54,7 +54,8 @@ export class CartService {
     else if (guestId) where.guestId = guestId;
     const item = await prisma.cartItem.findFirst({ where });
     if (!item) throw new NotFoundException('购物车商品不存在');
-    return prisma.cartItem.delete({ where: { id } });
+    await prisma.cartItem.delete({ where: { id } });
+    return { success: true };
   }
 
   async mergeGuestCart(guestId: string, userId: number) {

@@ -17,6 +17,7 @@ export default function MerchantOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [shipDialog, setShipDialog] = useState<{ id: number; company: string; trackingNo: string } | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -25,8 +26,17 @@ export default function MerchantOrdersPage() {
     api.get(`/merchant/orders${params}`).then((res) => { setOrders(res.data || []); setLoading(false); });
   }, [router, filter]);
 
-  const handleShip = async (id: number) => {
-    try { await api.post(`/merchant/orders/${id}/ship`); toast('发货成功', 'success'); window.location.reload(); } catch (err: any) { toast(err.message, 'error'); }
+  const handleShip = async () => {
+    if (!shipDialog) return;
+    try {
+      await api.post(`/merchant/orders/${shipDialog.id}/ship`, {
+        company: shipDialog.company || undefined,
+        trackingNo: shipDialog.trackingNo || undefined,
+      });
+      toast('发货成功', 'success');
+      setShipDialog(null);
+      window.location.reload();
+    } catch (err: any) { toast(err.message, 'error'); }
   };
 
   const filters = ['', 'PAID', 'SHIPPED', 'RECEIVED', 'CANCELLED', 'REFUNDED'];
@@ -65,7 +75,7 @@ export default function MerchantOrdersPage() {
                 <div className="flex items-center justify-between border-t border-[var(--color-border-light)] px-5 py-3">
                   <span className="text-sm text-[var(--color-muted)]">合计：<span className="font-bold text-[var(--color-ink)]">&yen;{order.totalAmount}</span></span>
                   <div className="flex gap-2">
-                    {order.status === 'PAID' && <Button size="sm" onClick={() => handleShip(order.id)}>发货</Button>}
+                    {order.status === 'PAID' && <Button size="sm" onClick={() => setShipDialog({ id: order.id, company: '', trackingNo: '' })}>发货</Button>}
                   </div>
                 </div>
               </Card>
@@ -73,6 +83,38 @@ export default function MerchantOrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Shipping Dialog */}
+      {shipDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-6 w-96 shadow-lg">
+            <h3 className="text-lg font-bold mb-4">填写物流信息</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">快递公司</label>
+                <select className="w-full rounded-lg border px-3 py-2" value={shipDialog.company} onChange={(e) => setShipDialog({ ...shipDialog, company: e.target.value })}>
+                  <option value="">-- 选择快递 --</option>
+                  <option value="顺丰速运">顺丰速运</option>
+                  <option value="圆通速递">圆通速递</option>
+                  <option value="中通快递">中通快递</option>
+                  <option value="韵达快递">韵达快递</option>
+                  <option value="申通快递">申通快递</option>
+                  <option value="极兔速递">极兔速递</option>
+                  <option value="EMS">EMS</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">快递单号</label>
+                <input className="w-full rounded-lg border px-3 py-2" placeholder="留空自动生成" value={shipDialog.trackingNo} onChange={(e) => setShipDialog({ ...shipDialog, trackingNo: e.target.value })} />
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setShipDialog(null)}>取消</Button>
+              <Button onClick={handleShip} disabled={!shipDialog.company}>确认发货</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </MerchantLayout>
   );
 }
