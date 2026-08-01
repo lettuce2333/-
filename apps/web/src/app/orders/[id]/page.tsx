@@ -20,6 +20,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [afterSale, setAfterSale] = useState<{ orderId: number; orderNo: string; amount: number; reason: string } | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -37,6 +38,15 @@ const handlePay = async () => {
 
   const handleReceive = async () => {
     try { await api.post(`/orders/${id}/receive`); toast('已确认收货', 'success'); setOrder({ ...order, status: 'RECEIVED' }); } catch (err: any) { toast(err.message, 'error'); }
+  };
+
+  const handleAfterSale = async () => {
+    if (!afterSale || !afterSale.reason) { toast('请填写申请原因', 'error'); return; }
+    try {
+      await api.post('/after-sales', { orderId: afterSale.orderId, type: 'refund_only', reason: afterSale.reason, amount: afterSale.amount });
+      toast('售后申请已提交', 'success');
+      setAfterSale(null);
+    } catch (err: any) { toast(err.message, 'error'); }
   };
 
   if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-48 animate-pulse rounded-lg bg-gray-200" /></div>;
@@ -101,7 +111,7 @@ const handlePay = async () => {
           {order.status === 'PENDING_PAYMENT' && <Button onClick={handlePay}>去支付</Button>}
           {order.status === 'SHIPPED' && <Button onClick={handleReceive}>确认收货</Button>}
           {(order.status === 'RECEIVED' || order.status === 'COMPLETED') && <button onClick={() => setShowReview(!showReview)} className="text-sm text-blue-600 hover:underline mr-3">评价</button>}
-          {order.status === 'RECEIVED' && <Link href={`/after-sales/new?orderId=${order.id}`}><Button variant="outline">申请售后</Button></Link>}
+          {order.status === 'RECEIVED' && !(order.afterSales?.some((a: any) => !['REFUNDED','CLOSED','ADMIN_REJECT','SHOP_REFUSED'].includes(a.status))) && <Button variant="outline" onClick={() => setAfterSale({ orderId: order.id, orderNo: order.orderNo, amount: order.totalAmount, reason: '' })}>申请售后</Button>}
         </div>
       </div>
 
@@ -126,6 +136,30 @@ const handlePay = async () => {
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowReview(false)}>取消</Button>
             <Button size="sm" onClick={submitReview} loading={submittingReview}>提交评价</Button>
+          </div>
+        </div>
+      )}
+
+      {/* After-Sale Dialog */}
+      {afterSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-6 w-96 shadow-lg">
+            <h3 className="text-lg font-bold mb-4">申请售后</h3>
+            <p className="text-sm text-gray-500 mb-3">订单号：{afterSale.orderNo}</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">退款金额</label>
+                <input type="number" className="w-full rounded-lg border px-3 py-2" value={afterSale.amount} onChange={(e) => setAfterSale({ ...afterSale, amount: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">申请原因</label>
+                <textarea className="w-full rounded-lg border px-3 py-2" rows={3} value={afterSale.reason} onChange={(e) => setAfterSale({ ...afterSale, reason: e.target.value })} placeholder="请描述退款原因" />
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setAfterSale(null)}>取消</Button>
+              <Button onClick={handleAfterSale}>提交申请</Button>
+            </div>
           </div>
         </div>
       )}

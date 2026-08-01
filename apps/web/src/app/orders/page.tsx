@@ -26,6 +26,11 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [afterSale, setAfterSale] = useState<{ orderId: number; orderNo: string; amount: number; reason: string } | null>(null);
+
+  const hasAfterSale = (order: any) => order.afterSales?.some((a: any) => !['REFUNDED','CLOSED','ADMIN_REJECT','SHOP_REFUSED'].includes(a.status));
+  const showStatus = (order: any) => hasAfterSale(order) ? '售后中' : statusMap[order.status];
+  const showColor = (order: any) => hasAfterSale(order) ? 'warning' : statusColors[order.status];
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
@@ -54,6 +59,15 @@ export default function OrdersPage() {
     } catch (err: any) { toast(err.message, 'error'); }
   };
 
+  const handleAfterSale = async () => {
+    if (!afterSale || !afterSale.reason) { toast('请填写申请原因', 'error'); return; }
+    try {
+      await api.post('/after-sales', { orderId: afterSale.orderId, type: 'refund_only', reason: afterSale.reason, amount: afterSale.amount });
+      toast('售后申请已提交', 'success');
+      setAfterSale(null);
+    } catch (err: any) { toast(err.message, 'error'); }
+  };
+
   const handleCancel = async (id: number) => {
     try {
       await api.post(`/orders/${id}/cancel`, { reason: '用户取消' });
@@ -71,10 +85,10 @@ export default function OrdersPage() {
         <span className="text-sm text-[var(--color-muted)]">共 {total} 笔</span>
       </div>
       <div className="mb-5 flex flex-wrap gap-1.5 bg-[var(--color-surface)] rounded-[var(--radius-sm)] border border-[var(--color-border-light)] p-0.5">
-        {['', 'PENDING_PAYMENT', 'PAID', 'SHIPPED', 'RECEIVED', 'COMPLETED', 'CANCELLED'].map((s) => (
+        {['', 'PENDING_PAYMENT', 'PAID', 'SHIPPED', 'RECEIVED', 'AFTER_SALE', 'COMPLETED', 'CANCELLED'].map((s) => (
           <button key={s} onClick={() => setStatusFilter(s)}
             className={`px-3 py-1.5 text-sm rounded-[var(--radius-sm)] transition-all duration-150 ${statusFilter === s ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]'}`}>
-            {s ? statusMap[s] : '全部'}
+            {s === 'AFTER_SALE' ? '售后中' : s ? statusMap[s] : '全部'}
           </button>
         ))}
       </div>
@@ -86,11 +100,11 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
+          {orders.filter((o) => statusFilter === 'AFTER_SALE' ? hasAfterSale(o) : true).map((order) => (
             <Card key={order.id} accent>
               <div className="flex items-center justify-between border-b border-[var(--color-border-light)] px-5 py-3">
                 <span className="text-xs text-[var(--color-muted)] font-mono">{order.orderNo}</span>
-                <Badge variant={(statusColors[order.status] || 'default') as any}>{statusMap[order.status] || order.status}</Badge>
+                <Badge variant={(showColor(order) || 'default') as any}>{showStatus(order)}</Badge>
               </div>
               <div className="px-5 py-3">
                 {order.items?.map((item: any) => (
@@ -119,12 +133,29 @@ export default function OrdersPage() {
                     <><Button size="sm" onClick={() => handlePay(order.id)}>去支付</Button><Button variant="ghost" size="sm" onClick={() => handleCancel(order.id)}>取消</Button></>
                   )}
                   {order.status === 'SHIPPED' && <Button size="sm" onClick={() => handleReceive(order.id)}>确认收货</Button>}
-                  {order.status === 'RECEIVED' && <Link href={`/after-sales?orderId=${order.id}`}><Button variant="outline" size="sm">申请售后</Button></Link>}
+                  {order.status === 'RECEIVED' && !hasAfterSale(order) && <Button variant="outline" size="sm" onClick={() => setAfterSale({ orderId: order.id, orderNo: order.orderNo, amount: order.totalAmount, reason: '' })}>申请售后</Button>}
                 </div>
               </div>
             </Card>
           ))}
           <Pagination page={page} pageCount={Math.ceil(total / 10)} total={total} onChange={setPage} />
+        </div>
+      )}
+
+      {afterSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-6 w-96 shadow-lg">
+            <h3 className="text-lg font-bold mb-4">申请售后</h3>
+            <p className="text-sm text-gray-500 mb-3">订单号：{afterSale.orderNo}</p>
+            <div className="space-y-3">
+              <div><label className="block text-sm font-medium mb-1">退款金额</label><input type="number" className="w-full rounded-lg border px-3 py-2" value={afterSale.amount} onChange={(e) => setAfterSale({ ...afterSale, amount: parseFloat(e.target.value) || 0 })} /></div>
+              <div><label className="block text-sm font-medium mb-1">申请原因</label><textarea className="w-full rounded-lg border px-3 py-2" rows={3} value={afterSale.reason} onChange={(e) => setAfterSale({ ...afterSale, reason: e.target.value })} placeholder="请描述退款原因" /></div>
+            </div>
+            <div className="mt-5 flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setAfterSale(null)}>取消</Button>
+              <Button onClick={handleAfterSale}>提交申请</Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

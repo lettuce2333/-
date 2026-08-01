@@ -80,7 +80,12 @@ export class OrdersService {
     const page = query.page || 1;
     const pageSize = query.pageSize || 10;
     const where: any = { userId };
-    if (query.status) where.status = query.status;
+    // AFTER_SALE filter: get RECEIVED orders, filter client-side by active afterSales
+    if (query.status === 'AFTER_SALE') {
+      where.status = 'RECEIVED';
+    } else if (query.status) {
+      where.status = query.status;
+    }
 
     const [data, total] = await Promise.all([
       prisma.order.findMany({
@@ -95,6 +100,7 @@ export class OrdersService {
       order.items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
       order.shop = await prisma.shop.findUnique({ where: { id: order.shopId } });
       order.logistics = await prisma.logistics.findUnique({ where: { orderId: order.id } });
+      order.afterSales = await prisma.afterSale.findMany({ where: { orderId: order.id } });
     }
     return { data, total, page, pageSize };
   }
@@ -103,18 +109,12 @@ export class OrdersService {
     const where: any = { id: orderId };
     if (userId) where.userId = userId;
 
-    const order = await prisma.order.findFirst({
-      where,
-      include: {
-        items: { include: { product: { select: { id: true, name: true } } } },
-        shop: { select: { id: true, name: true } },
-        logistics: true,
-        payments: true,
-        statusLogs: { orderBy: { createdAt: 'asc' } },
-        afterSales: true,
-      },
-    });
+    const order = await prisma.order.findFirst({ where });
     if (!order) throw new NotFoundException('订单不存在');
+    order.items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+    order.shop = await prisma.shop.findUnique({ where: { id: order.shopId } });
+    order.logistics = await prisma.logistics.findUnique({ where: { orderId: order.id } });
+    order.afterSales = await prisma.afterSale.findMany({ where: { orderId: order.id } });
     return order;
   }
 
