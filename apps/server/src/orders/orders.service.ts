@@ -14,17 +14,16 @@ export class OrdersService {
     // Group items by shop and validate stock
     const shopGroups = new Map<number, any[]>();
     for (const item of data.items) {
-      const sku = await prisma.productSku.findUnique({
-        where: { id: item.skuId },
-        include: { product: true },
-      });
+      const sku = await prisma.productSku.findUnique({ where: { id: item.skuId } });
       if (!sku) throw new NotFoundException(`SKU ${item.skuId} 不存在`);
-      if (sku.stock < item.quantity) throw new BadRequestException(`${sku.product.name} 库存不足`);
-      if (sku.product.status !== 'active') throw new BadRequestException(`${sku.product.name} 已下架`);
+      const product = await prisma.product.findUnique({ where: { id: sku.productId } });
+      if (!product) throw new NotFoundException(`商品不存在`);
+      if (sku.stock < item.quantity) throw new BadRequestException(`${product.name} 库存不足`);
+      if (product.status !== 'active') throw new BadRequestException(`${product.name} 已下架`);
 
-      const shopId = sku.product.shopId;
+      const shopId = product.shopId;
       if (!shopGroups.has(shopId)) shopGroups.set(shopId, []);
-      shopGroups.get(shopId)!.push({ sku, product: sku.product, quantity: item.quantity });
+      shopGroups.get(shopId)!.push({ sku, product, quantity: item.quantity });
     }
 
     // Create orders (one per shop)
@@ -33,51 +32,38 @@ export class OrdersService {
       const orderNo = `ORD${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       const totalAmount = items.reduce((sum, i) => sum + i.sku.price * i.quantity, 0);
 
-      const order = await prisma.$transaction(async (tx) => {
-        // Deduct stock
-        for (const item of items) {
-          const updated = await tx.productSku.update({
-            where: { id: item.sku.id },
-            data: { stock: { decrement: item.quantity } },
-          });
-          if (updated.stock < 0) throw new BadRequestException(`${item.product.name} 库存不足`);
-          await tx.product.update({
-            where: { id: item.product.id },
-            data: { sales: { increment: item.quantity } },
-          });
-        }
+      // Deduct stock
+      for (const item of items) {
+        const newStock = item.sku.stock - item.quantity;
+        if (newStock < 0) throw new BadRequestException(`${item.product.name} 库存不足`);
+        await prisma.productSku.update({ where: { id: item.sku.id }, data: { stock: newStock } });
+        await prisma.product.update({ where: { id: item.product.id }, data: { sales: (item.product.sales || 0) + item.quantity } });
+      }
 
-        // Create order
-        const order = await tx.order.create({
-          data: {
-            orderNo,
-            userId,
-            shopId,
-            totalAmount,
-            receiverName: address.receiver,
-            receiverPhone: address.phone,
-            receiverAddress: `${address.province}${address.city}${address.district}${address.detail}`,
-            items: {
-              create: items.map((i) => ({
-                productId: i.product.id,
-                skuId: i.sku.id,
-                productName: i.product.name,
-                skuSpecs: i.sku.specs,
-                quantity: i.quantity,
-                unitPrice: i.sku.price,
-                subtotal: i.sku.price * i.quantity,
-                image: JSON.parse(i.product.images)?.[0] || null,
-              })),
-            },
-            statusLogs: {
-              create: { fromStatus: null, toStatus: 'PENDING_PAYMENT', operator: 'system', remark: '订单创建' },
-            },
-          },
-          include: { items: true },
-        });
-        return order;
+      // Create order
+      const order = await prisma.order.create({
+        data: {
+          orderNo, userId, shopId, totalAmount,
+          receiverName: address.receiver,
+          receiverPhone: address.phone,
+          receiverAddress: `${address.province}${address.city}${address.district}${address.detail}`,
+        },
       });
 
+      // Create order items
+      for (const i of items) {
+        let image = null;
+        try { const imgs = JSON.parse(i.product.images || '[]'); image = imgs[0] || null; } catch {}
+        await prisma.orderItem.create({
+          data: { orderId: order.id, productId: i.product.id, skuId: i.sku.id, productName: i.product.name, skuSpecs: i.sku.specs, quantity: i.quantity, unitPrice: i.sku.price, subtotal: i.sku.price * i.quantity, image },
+        });
+      }
+
+      // Create status log
+      await prisma.orderStatusLog.create({ data: { orderId: order.id, fromStatus: null, toStatus: 'PENDING_PAYMENT', operator: 'system', remark: '订单创建' } });
+
+      // Attach items for response
+      order.items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
       orders.push(order);
     }
 
@@ -132,14 +118,10 @@ export class OrdersService {
     if (!order) throw new NotFoundException('订单不存在');
     if (order.status !== 'PENDING_PAYMENT') throw new BadRequestException('订单状态不允许支付');
 
-    return prisma.$transaction(async (tx) => {
-      await tx.order.update({ where: { id: orderId }, data: { status: 'PAID', paidAt: new Date() } });
-      await tx.payment.create({ data: { orderId, amount: order.totalAmount, method: 'mock_wallet' } });
-      await tx.orderStatusLog.create({
-        data: { orderId, fromStatus: 'PENDING_PAYMENT', toStatus: 'PAID', operator: 'user', remark: '支付成功' },
-      });
-      return tx.order.findUnique({ where: { id: orderId } });
-    });
+    await prisma.payment.create({ data: { orderId, amount: order.totalAmount, method: 'mock_wallet' } });
+    await prisma.order.update({ where: { id: orderId }, data: { status: 'PAID', paidAt: new Date().toISOString() } });
+    await prisma.orderStatusLog.create({ data: { orderId, fromStatus: 'PENDING_PAYMENT', toStatus: 'PAID', operator: 'user', remark: '支付成功' } });
+    return prisma.order.findUnique({ where: { id: orderId } });
   }
 
   async cancel(orderId: number, userId: number, reason?: string) {

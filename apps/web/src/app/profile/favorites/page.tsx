@@ -64,6 +64,9 @@ export default function FavoritesPage() {
                   <Link href={`/products/${item.productId}`} className="text-sm font-medium text-gray-800 line-clamp-1 hover:text-red-500">
                     {item.product?.name}
                   </Link>
+                  {item.product?.variants && (
+                    <p className="mt-1 text-xs text-gray-400">{item.product.variants}</p>
+                  )}
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-lg font-bold text-red-500">¥{item.product?.price}</span>
                     <Button variant="ghost" size="sm" onClick={() => removeFavorite(item.productId)} className="text-gray-400 hover:text-red-500">

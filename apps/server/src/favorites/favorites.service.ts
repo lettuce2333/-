@@ -10,21 +10,17 @@ export class FavoritesService {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: {
-          product: {
-            select: { id: true, name: true, price: true, images: true, sales: true, status: true },
-          },
-        },
       }),
       prisma.favorite.count({ where: { userId } }),
     ]);
+    for (const fav of data) {
+      fav.product = await prisma.product.findUnique({ where: { id: fav.productId } });
+    }
     return { data, total, page, pageSize };
   }
 
   async toggleFavorite(userId: number, productId: number) {
-    const existing = await prisma.favorite.findUnique({
-      where: { userId_productId: { userId, productId } },
-    });
+    const existing = await prisma.favorite.findFirst({ where: { userId, productId } });
     if (existing) {
       await prisma.favorite.delete({ where: { id: existing.id } });
       return { favorited: false };
@@ -34,9 +30,7 @@ export class FavoritesService {
   }
 
   async checkFavorite(userId: number, productId: number) {
-    const existing = await prisma.favorite.findUnique({
-      where: { userId_productId: { userId, productId } },
-    });
+    const existing = await prisma.favorite.findFirst({ where: { userId, productId } });
     return { favorited: !!existing };
   }
 }
