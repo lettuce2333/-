@@ -2,13 +2,24 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { Search, ShoppingCart, User, LogOut, Package, Bell, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUnread } from '@/lib/notifications';
 
 export function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [keyword, setKeyword] = useState('');
+  const unreadCount = useUnread((s) => s.count);
+  const refreshUnread = useUnread((s) => s.refresh);
+
+  useEffect(() => {
+    if (user) {
+      refreshUnread();
+    } else {
+      useUnread.getState().setCount(0);
+    }
+  }, [user, refreshUnread]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +83,13 @@ export function Header() {
             <Package className="h-5 w-5" />
             <span className="hidden sm:inline">我的订单</span>
           </Link>
-          <Link href="/notifications" className="flex items-center gap-1.5 text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors">
+          <Link href="/notifications" className="relative flex items-center gap-1.5 text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors">
             <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
             <span className="hidden sm:inline">消息</span>
           </Link>
           <Link href="/profile" className="flex items-center gap-1.5 text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors">

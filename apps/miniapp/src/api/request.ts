@@ -28,6 +28,9 @@ export async function request<T = any>(url: string, options: RequestOptions = {}
   })
 
   if (res.statusCode >= 200 && res.statusCode < 300) {
+    if (res.data === '' || res.data === undefined || res.data === null) {
+      return null as T
+    }
     return res.data as T
   }
 

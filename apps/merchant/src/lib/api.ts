@@ -5,7 +5,13 @@ async function request(url: string, options: RequestInit = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}${url}`, { ...options, headers });
   if (!res.ok) { const err = await res.json().catch(() => ({ message: '请求失败' })); throw new Error(err.message || `HTTP ${res.status}`); }
-  return res.json();
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 export const api = {
   get: (url: string) => request(url),

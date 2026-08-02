@@ -22,7 +22,13 @@ async function request(url: string, options: RequestInit = {}) {
     throw new Error(err.message || `HTTP ${res.status}`);
   }
 
-  return res.json();
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 export const api = {

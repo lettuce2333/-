@@ -10,7 +10,7 @@ export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '' });
-  const [variants, setVariants] = useState([{ name: '', stock: '' }]);
+  const [variants, setVariants] = useState([{ name: '', stock: '', price: '' }]);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +46,7 @@ export default function NewProductPage() {
 
   const removeImage = (idx: number) => setImages(images.filter((_, i) => i !== idx));
 
-  const addVariant = () => setVariants([...variants, { name: '', stock: '' }]);
+  const addVariant = () => setVariants([...variants, { name: '', stock: '', price: '' }]);
   const removeVariant = (i: number) => setVariants(variants.filter((_, idx) => idx !== i));
   const updateVariant = (i: number, field: string, val: string) => {
     const next = [...variants]; next[i] = { ...next[i], [field]: val }; setVariants(next);
@@ -68,6 +68,7 @@ export default function NewProductPage() {
         variants: validVariants.map(v => ({
           name: v.name.trim(),
           stock: parseInt(v.stock) || 0,
+          price: v.price === '' ? undefined : parseFloat(v.price) || 0,
         })),
       });
       toast('商品创建成功', 'success');
@@ -98,6 +99,7 @@ export default function NewProductPage() {
               <div key={i} className="mb-2 flex gap-2 items-center">
                 <input placeholder="种类名称（如：银色256GB）" className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} />
                 <input placeholder="库存" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} />
+                <input placeholder="价格" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.price} onChange={(e) => updateVariant(i, 'price', e.target.value)} />
                 {variants.length > 1 && (
                   <button onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-600 text-sm">删除</button>
                 )}

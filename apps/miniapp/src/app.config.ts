@@ -8,6 +8,10 @@ export default defineAppConfig({
     'pages/checkout/index',
     'pages/orders/index',
     'pages/mine/index',
+    'pages/order-detail/index',
+    'pages/address/index',
+    'pages/reviews/index',
+    'pages/notifications/index',
   ],
   window: {
     backgroundTextStyle: 'light',

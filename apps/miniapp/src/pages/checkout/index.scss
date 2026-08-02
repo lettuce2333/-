@@ -30,6 +30,70 @@
   font-size: 26rpx;
 }
 
+.panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel__action {
+  font-size: 26rpx;
+  color: #b91c1c;
+  padding: 8rpx 20rpx;
+  border: 1rpx solid #f3c2c2;
+  border-radius: 28rpx;
+}
+
+.addr-form {
+  border: 1rpx solid #f0ece6;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.addr-form__input {
+  height: 76rpx;
+  background: #f8f6f3;
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  margin-bottom: 16rpx;
+  color: #1a1816;
+}
+
+.addr-form__row {
+  display: flex;
+  gap: 12rpx;
+}
+
+.addr-form__input--third {
+  flex: 1;
+}
+
+.addr-form__default {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.addr-form__label {
+  font-size: 26rpx;
+  color: #1a1816;
+}
+
+.addr-form__save {
+  height: 76rpx;
+  background: #b91c1c;
+  color: #fff;
+  border-radius: 38rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
 .addr {
   border: 1rpx solid #e8e3dc;
   border-radius: 16rpx;

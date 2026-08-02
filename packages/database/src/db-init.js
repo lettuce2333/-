@@ -2,7 +2,17 @@ const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = path.resolve(__dirname, '..', 'prisma', 'dev.db');
+function findPackageRoot(dir) {
+  let current = dir;
+  for (;;) {
+    if (fs.existsSync(path.join(current, 'package.json'))) return current;
+    const parent = path.dirname(current);
+    if (parent === current) return dir;
+    current = parent;
+  }
+}
+
+const DB_PATH = path.resolve(findPackageRoot(__dirname), 'prisma', 'dev.db');
 const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 

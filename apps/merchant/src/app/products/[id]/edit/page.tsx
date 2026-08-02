@@ -15,7 +15,7 @@ export default function EditProductPage() {
   const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '' });
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [variants, setVariants] = useState([{ name: '', stock: '' }]);
+  const [variants, setVariants] = useState([{ name: '', stock: '', price: '' }]);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/login'); return; }
@@ -32,7 +32,7 @@ export default function EditProductPage() {
         try { const imgs = JSON.parse(product.images || '[]'); setImages(Array.isArray(imgs) ? imgs : []); } catch { setImages([]); }
         const skus = product.skus || [];
         if (skus.length > 0) {
-          setVariants(skus.map((s: any) => ({ name: s.specs || '', stock: String(s.stock || 0) })));
+          setVariants(skus.map((s: any) => ({ name: s.specs || '', stock: String(s.stock || 0), price: s.price !== undefined && s.price !== null ? String(s.price) : '' })));
         }
       }
       setLoading(false);
@@ -51,7 +51,7 @@ export default function EditProductPage() {
     } catch (err: any) { toast(err.message, 'error'); } finally { setUploading(false); e.target.value = ''; }
   };
 
-  const addVariant = () => setVariants([...variants, { name: '', stock: '' }]);
+  const addVariant = () => setVariants([...variants, { name: '', stock: '', price: '' }]);
   const updateVariant = (i: number, field: string, val: string) => {
     const next = [...variants]; next[i] = { ...next[i], [field]: val }; setVariants(next);
   };
@@ -66,7 +66,11 @@ export default function EditProductPage() {
       await api.put(`/merchant/products/${id}`, {
         name: form.name, categoryId: parseInt(form.categoryId), description: form.description,
         images, price: parseFloat(form.price) || 0,
-        variants: validVariants.map(v => ({ name: v.name.trim(), stock: parseInt(v.stock) || 0 })),
+        variants: validVariants.map(v => ({
+          name: v.name.trim(),
+          stock: parseInt(v.stock) || 0,
+          price: v.price === '' ? undefined : parseFloat(v.price) || 0,
+        })),
       });
       toast('保存成功', 'success'); router.push('/products');
     } catch (err: any) { toast(err.message, 'error'); } finally { setSubmitting(false); }
@@ -96,6 +100,7 @@ export default function EditProductPage() {
               <div key={i} className="mb-2 flex gap-2 items-center">
                 <input placeholder="种类名称" className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} />
                 <input placeholder="库存" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} />
+                <input placeholder="价格" type="number" className="w-24 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" value={v.price} onChange={(e) => updateVariant(i, 'price', e.target.value)} />
                 {variants.length > 1 && (
                   <button onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-600 text-sm">删除</button>
                 )}

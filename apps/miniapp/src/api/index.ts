@@ -76,6 +76,36 @@ export interface Order {
   status: string
   createdAt: string
   items?: OrderItem[]
+  afterSales?: any[]
+}
+
+export interface OrderDetail extends Order {
+  receiverName?: string
+  receiverPhone?: string
+  receiverAddress?: string
+  paidAt?: string
+  shippedAt?: string
+  logistics?: { company: string; trackingNo: string }
+  afterSales?: any[]
+}
+
+export interface Review {
+  id: number
+  productId: number
+  rating: number
+  content: string
+  createdAt: string
+  product?: { id: number; name: string; images?: string }
+  replies?: any[]
+}
+
+export interface NotificationItem {
+  id: number
+  type: string
+  title: string
+  content?: string
+  isRead: number | boolean
+  createdAt: string
 }
 
 export interface Paginated<T> {
@@ -107,12 +137,29 @@ export const api = {
   addresses: () => request<Address[]>('/api/users/addresses'),
 
   // Orders
-  createOrder: (data: { addressId: number; items: { skuId: number; quantity: number }[] }) =>
+  createOrder: (data: { addressId: number; items: { skuId: number; quantity: number }[]; createdAt?: string; fromCart?: boolean }) =>
     request<Order[]>('/api/orders', { method: 'POST', data }),
   orders: (params: Record<string, unknown> = {}) => request<Paginated<Order>>(`/api/orders?${toQuery(params)}`),
+  order: (id: number) => request<OrderDetail>(`/api/orders/${id}`),
   payOrder: (id: number) => request(`/api/orders/${id}/pay`, { method: 'POST' }),
   cancelOrder: (id: number) => request(`/api/orders/${id}/cancel`, { method: 'POST', data: { reason: '用户取消' } }),
   receiveOrder: (id: number) => request(`/api/orders/${id}/receive`, { method: 'POST' }),
+  createReview: (data: { orderId: number; productId: number; rating: number; content: string }) =>
+    request('/api/reviews', { method: 'POST', data }),
+  createAfterSale: (data: { orderId: number; type: string; reason: string; amount: number }) =>
+    request('/api/after-sales', { method: 'POST', data }),
+
+  // Addresses
+  createAddress: (data: { receiver: string; phone: string; province: string; city: string; district: string; detail: string; isDefault: boolean }) =>
+    request<Address>('/api/users/addresses', { method: 'POST', data }),
+  removeAddress: (id: number) => request(`/api/users/addresses/${id}`, { method: 'DELETE' }),
+
+  // Reviews & notifications
+  reviews: (params: Record<string, unknown> = {}) => request<Paginated<Review>>(`/api/reviews?${toQuery(params)}`),
+  notifications: (params: Record<string, unknown> = {}) => request<Paginated<NotificationItem>>(`/api/notifications?${toQuery(params)}`),
+  unreadNotifications: () => request<{ count: number }>('/api/notifications/unread-count'),
+  markNotificationRead: (id: number) => request(`/api/notifications/${id}/read`, { method: 'POST' }),
+  markAllNotificationsRead: () => request('/api/notifications/read-all', { method: 'POST' }),
 }
 
 function toQuery(params: Record<string, unknown>): string {

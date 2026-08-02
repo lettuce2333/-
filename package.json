@@ -11,8 +11,8 @@
     "lint": "turbo lint",
     "db:generate": "cd packages/database && npx prisma generate",
     "db:push": "cd packages/database && npx prisma db push",
-    "db:seed": "cd packages/database && npx tsx seed.ts",
-    "setup": "npm install && cd packages/database && npx tsx seed.ts"
+    "db:seed": "npm run build --workspace @zuoye/database && cd packages/database && node dist/seed.js",
+    "setup": "npm install && npm run build --workspace @zuoye/database && cd packages/database && node dist/seed.js"
   },
   "devDependencies": {
     "@tarojs/taro-loader": "^4.2.1",

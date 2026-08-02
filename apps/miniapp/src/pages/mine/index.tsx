@@ -11,12 +11,25 @@ export default function MinePage() {
   const load = () => {
     if (!isLoggedIn()) {
       setUser(null)
+      Taro.removeTabBarBadge({ index: 3 }).catch(() => {})
       return
     }
     api
       .me()
-      .then(setUser)
-      .catch(() => setUser(null))
+      .then((res) => {
+        setUser(res)
+        api.unreadNotifications().then((u) => {
+          if (u?.count > 0) {
+            Taro.setTabBarBadge({ index: 3, text: String(u.count > 99 ? 99 : u.count) }).catch(() => {})
+          } else {
+            Taro.removeTabBarBadge({ index: 3 }).catch(() => {})
+          }
+        }).catch(() => {})
+      })
+      .catch(() => {
+        setUser(null)
+        Taro.removeTabBarBadge({ index: 3 }).catch(() => {})
+      })
   }
 
   useDidShow(() => load())
@@ -28,6 +41,18 @@ export default function MinePage() {
 
   const goOrders = () => {
     Taro.navigateTo({ url: '/pages/orders/index' })
+  }
+
+  const goAddress = () => {
+    Taro.navigateTo({ url: '/pages/address/index' })
+  }
+
+  const goReviews = () => {
+    Taro.navigateTo({ url: '/pages/reviews/index' })
+  }
+
+  const goNotifications = () => {
+    Taro.navigateTo({ url: '/pages/notifications/index' })
   }
 
   const logout = () => {
@@ -52,6 +77,21 @@ export default function MinePage() {
         <View className='menu-item' onClick={goOrders}>
           <Text className='menu-item__icon'>📋</Text>
           <Text className='menu-item__label'>我的订单</Text>
+          <Text className='menu-item__arrow'>›</Text>
+        </View>
+        <View className='menu-item' onClick={goAddress}>
+          <Text className='menu-item__icon'>📍</Text>
+          <Text className='menu-item__label'>收货地址</Text>
+          <Text className='menu-item__arrow'>›</Text>
+        </View>
+        <View className='menu-item' onClick={goReviews}>
+          <Text className='menu-item__icon'>⭐</Text>
+          <Text className='menu-item__label'>我的评价</Text>
+          <Text className='menu-item__arrow'>›</Text>
+        </View>
+        <View className='menu-item' onClick={goNotifications}>
+          <Text className='menu-item__icon'>🔔</Text>
+          <Text className='menu-item__label'>消息通知</Text>
           <Text className='menu-item__arrow'>›</Text>
         </View>
       </View>

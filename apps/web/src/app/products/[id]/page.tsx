@@ -59,8 +59,12 @@ export default function ProductDetailPage() {
 
   const buyNow = async () => {
     if (!user) { router.push('/login'); return; }
-    addToCart();
-    router.push('/cart');
+    if (!selectedSku) return;
+    sessionStorage.setItem(
+      'buy_now_items',
+      JSON.stringify([{ productId: parseInt(id), skuId: selectedSku.id, quantity: qty }]),
+    );
+    router.push('/checkout?mode=buy');
   };
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-8"><div className="h-96 animate-pulse rounded-lg bg-gray-200" /></div>;

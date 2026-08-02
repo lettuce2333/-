@@ -20,11 +20,24 @@ export class NotificationsService {
     return { data, total, page, pageSize };
   }
 
+  async getUnreadCount(userId: number) {
+    const count = await prisma.notification.count({ where: { userId, isRead: false } });
+    return { count };
+  }
+
   async markAsRead(userId: number, id: number) {
-    return prisma.notification.updateMany({ where: { id, userId }, data: { isRead: true } });
+    const result = await prisma.notification.updateMany({
+      where: { id, userId },
+      data: { isRead: true },
+    });
+    return { success: true, count: result?.count || 0 };
   }
 
   async markAllAsRead(userId: number) {
-    return prisma.notification.updateMany({ where: { userId, isRead: false }, data: { isRead: true } });
+    const result = await prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true, count: result?.count || 0 };
   }
 }

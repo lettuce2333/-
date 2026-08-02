@@ -6,10 +6,15 @@ import { NotificationsService } from '../notifications/notifications.service';
 export class OrdersService {
   constructor(private notificationsService: NotificationsService) {}
 
-  async create(userId: number, data: { addressId: number; items: { skuId: number; quantity: number }[]; remark?: string }) {
+  async create(userId: number, data: { addressId: number; items: { skuId: number; quantity: number }[]; remark?: string; createdAt?: string; fromCart?: boolean }) {
     // Get address
     const address = await prisma.address.findFirst({ where: { id: data.addressId, userId } });
     if (!address) throw new NotFoundException('地址不存在');
+
+    const orderTime =
+      data.createdAt && !Number.isNaN(Date.parse(data.createdAt))
+        ? new Date(data.createdAt).toISOString()
+        : new Date().toISOString();
 
     // Group items by shop and validate stock
     const shopGroups = new Map<number, any[]>();
@@ -43,7 +48,7 @@ export class OrdersService {
       // Create order
       const order = await prisma.order.create({
         data: {
-          orderNo, userId, shopId, totalAmount,
+          orderNo, userId, shopId, totalAmount, createdAt: orderTime,
           receiverName: address.receiver,
           receiverPhone: address.phone,
           receiverAddress: `${address.province}${address.city}${address.district}${address.detail}`,
@@ -67,10 +72,12 @@ export class OrdersService {
       orders.push(order);
     }
 
-    // Clear ordered items from cart
-    const orderedSkuIds = data.items.map(i => i.skuId);
-    for (const skuId of orderedSkuIds) {
-      await prisma.cartItem.deleteMany({ where: { userId, skuId } });
+    // Clear ordered items from cart only when checkout came from the cart
+    if (data.fromCart !== false) {
+      const orderedSkuIds = data.items.map(i => i.skuId);
+      for (const skuId of orderedSkuIds) {
+        await prisma.cartItem.deleteMany({ where: { userId, skuId } });
+      }
     }
 
     return orders;

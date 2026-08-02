@@ -38,7 +38,37 @@ export class ProductsService {
     product.skus = await prisma.productSku.findMany({ where: { productId: id } });
     product.shop = await prisma.shop.findUnique({ where: { id: product.shopId } });
     product.category = await prisma.category.findUnique({ where: { id: product.categoryId } });
+    product.reviews = await this.loadReviews(id);
     return product;
+  }
+
+  private async loadReviews(productId: number) {
+    const reviews = await prisma.review.findMany({
+      where: { productId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    if (!reviews.length) return [];
+
+    const userIds = [...new Set(reviews.map((r: any) => r.userId))];
+    const reviewIds = reviews.map((r: any) => r.id);
+    const [users, replies] = await Promise.all([
+      prisma.user.findMany({ where: { id: { in: userIds } } }),
+      prisma.reviewReply.findMany({ where: { reviewId: { in: reviewIds } } }),
+    ]);
+    const userMap = new Map(users.map((u: any) => [u.id, u]));
+    const replyMap = new Map<number, any[]>();
+    for (const reply of replies) {
+      const list = replyMap.get(reply.reviewId) || [];
+      list.push(reply);
+      replyMap.set(reply.reviewId, list);
+    }
+
+    return reviews.map((r: any) => ({
+      ...r,
+      user: r.isAnonymous ? null : userMap.get(r.userId) || null,
+      replies: replyMap.get(r.id) || [],
+    }));
   }
 
   async getShopProducts(shopId: number, query: { page?: number; pageSize?: number; status?: string }) {
@@ -119,21 +149,38 @@ export class ProductsService {
       updateData.totalStock = totalStock;
       updateData.variants = variantsLabel;
 
-      // Recreate SKUs
-      await prisma.productSku.deleteMany({ where: { productId } });
+      // Sync SKUs without deleting referenced rows
+      const existingSkus = await prisma.productSku.findMany({ where: { productId } });
+      const submittedNames = variantList.map((v: any) => String(v.name || '').trim());
       for (const v of variantList) {
-        await prisma.productSku.create({
-          data: {
-            productId,
-            specs: v.name || '',
-            price: data.price || product.price,
-            stock: parseInt(v.stock) || 0,
-          },
-        });
+        const name = String(v.name || '').trim();
+        const variantPrice =
+          v.price !== undefined && v.price !== null && v.price !== ''
+            ? Number(v.price)
+            : data.price || product.price;
+        const stock = parseInt(v.stock) || 0;
+        const existing = existingSkus.find((s: any) => String(s.specs || '').trim() === name);
+        if (existing) {
+          await prisma.productSku.update({ where: { id: existing.id }, data: { price: variantPrice, stock } });
+        } else {
+          await prisma.productSku.create({
+            data: { productId, specs: name, price: variantPrice, stock },
+          });
+        }
+      }
+      for (const sku of existingSkus) {
+        if (submittedNames.includes(String(sku.specs || '').trim())) continue;
+        try {
+          await prisma.productSku.delete({ where: { id: sku.id } });
+        } catch {
+          await prisma.productSku.update({ where: { id: sku.id }, data: { stock: 0 } });
+        }
       }
     }
 
-    return prisma.product.update({ where: { id: productId }, data: updateData });
+    const updated = await prisma.product.update({ where: { id: productId }, data: updateData });
+    updated.skus = await prisma.productSku.findMany({ where: { productId } });
+    return updated;
   }
 
   async submitForReview(shopId: number, userId: number, productId: number) {

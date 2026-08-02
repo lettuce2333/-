@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { Button, Card, Badge } from '@zuoye/ui';
 import { Bell, CheckCheck, ChevronRight } from 'lucide-react';
 import { toast } from '@/components/toaster';
+import { useUnread } from '@/lib/notifications';
 
 const typeLabels: Record<string, string> = {
   order: '订单通知',
@@ -19,24 +20,38 @@ export default function NotificationsPage() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const refreshUnread = useUnread((s) => s.refresh);
+  const decrementUnread = useUnread((s) => s.decrement);
+  const setUnread = useUnread((s) => s.setCount);
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
     api.get('/notifications').then((res) => {
       setItems(res.data || []);
       setLoading(false);
+      refreshUnread();
     }).catch(() => setLoading(false));
-  }, [user, router]);
+  }, [user, router, refreshUnread]);
 
   const markRead = async (id: number) => {
-    await api.post(`/notifications/${id}/read`);
-    setItems(items.map((n) => n.id === id ? { ...n, isRead: true } : n));
+    try {
+      await api.post(`/notifications/${id}/read`);
+      setItems(items.map((n) => n.id === id ? { ...n, isRead: true } : n));
+      decrementUnread();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
   const markAllRead = async () => {
-    await api.post('/notifications/read-all');
-    setItems(items.map((n) => ({ ...n, isRead: true })));
-    toast('已全部标为已读', 'success');
+    try {
+      await api.post('/notifications/read-all');
+      setItems(items.map((n) => ({ ...n, isRead: true })));
+      setUnread(0);
+      toast('已全部标为已读', 'success');
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
   };
 
   const unreadCount = items.filter((n) => !n.isRead).length;

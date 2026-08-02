@@ -3,6 +3,10 @@ const db = require('./db-init.js');
 
 function toSqlValue(val: any): string { return "''"; }
 
+function bindValue(val: any): any {
+  return typeof val === 'boolean' ? (val ? 1 : 0) : val;
+}
+
 function buildWhere(where: any, tableAlias = ''): { clause: string; params: any[] } {
   if (!where || Object.keys(where).length === 0) return { clause: '', params: [] };
   const prefix = tableAlias ? `${tableAlias}.` : '';
@@ -18,13 +22,15 @@ function buildWhere(where: any, tableAlias = ''): { clause: string; params: any[
       params.push(Number(val));
     } else if (typeof val === 'object' && val !== null) {
       if ('contains' in val) { conditions.push(`${prefix}${key} LIKE ?`); params.push(`%${val.contains}%`); }
-      else if ('in' in val && Array.isArray(val.in)) { conditions.push(`${prefix}${key} IN (${val.in.map(() => '?').join(',')})`); params.push(...val.in); }
-      else if ('lte' in val) { conditions.push(`${prefix}${key} <= ?`); params.push(val.lte instanceof Date ? val.lte.toISOString() : val.lte); }
-      else if ('gte' in val) { conditions.push(`${prefix}${key} >= ?`); params.push(val.gte instanceof Date ? val.gte.toISOString() : val.gte); }
-      else if ('notIn' in val && Array.isArray(val.notIn)) { conditions.push(`${prefix}${key} NOT IN (${val.notIn.map(() => '?').join(',')})`); params.push(...val.notIn); }
+      else if ('in' in val && Array.isArray(val.in)) { conditions.push(`${prefix}${key} IN (${val.in.map(() => '?').join(',')})`); params.push(...val.in.map(bindValue)); }
+      else if ('notIn' in val && Array.isArray(val.notIn)) { conditions.push(`${prefix}${key} NOT IN (${val.notIn.map(() => '?').join(',')})`); params.push(...val.notIn.map(bindValue)); }
+      else if ('not' in val && val.not !== null && val.not !== undefined) { conditions.push(`${prefix}${key} != ?`); params.push(bindValue(val.not)); }
+      else if ('equals' in val && val.equals !== null && val.equals !== undefined) { conditions.push(`${prefix}${key} = ?`); params.push(bindValue(val.equals)); }
+      else if ('lte' in val) { conditions.push(`${prefix}${key} <= ?`); params.push(bindValue(val.lte instanceof Date ? val.lte.toISOString() : val.lte)); }
+      else if ('gte' in val) { conditions.push(`${prefix}${key} >= ?`); params.push(bindValue(val.gte instanceof Date ? val.gte.toISOString() : val.gte)); }
     } else {
       conditions.push(`${prefix}${key} = ?`);
-      params.push(val);
+      params.push(bindValue(val));
     }
   }
   return { clause: conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '', params };
@@ -57,6 +63,24 @@ function queryAll(sql: string, params: any[]): any[] {
 function execute(sql: string, params: any[]): any {
   const stmt = db.prepare(sql);
   return stmt.run(...params);
+}
+
+function buildSets(data: Record<string, any>): { sets: string[]; vals: any[] } {
+  const sets: string[] = [];
+  const vals: any[] = [];
+  for (const [key, val] of Object.entries(data)) {
+    if (val === null || val === undefined) continue;
+    if (val instanceof Date) { sets.push(`${key} = ?`); vals.push(val.toISOString()); continue; }
+    if (typeof val === 'object') {
+      if ('increment' in val) { sets.push(`${key} = ${key} + ?`); vals.push(bindValue(val.increment)); }
+      else if ('decrement' in val) { sets.push(`${key} = ${key} - ?`); vals.push(bindValue(val.decrement)); }
+      else if ('set' in val) { sets.push(`${key} = ?`); vals.push(bindValue(val.set)); }
+      continue;
+    }
+    sets.push(`${key} = ?`);
+    vals.push(bindValue(val));
+  }
+  return { sets, vals };
 }
 
 function doTransaction<T>(fn: () => T): T {
@@ -98,7 +122,7 @@ function createModel(modelName: string) {
       if (val === null || val === undefined) continue;
       if (val instanceof Date) { fields.push(key); vals.push(val.toISOString()); placeholders.push('?'); continue; }
       if (typeof val === 'object') continue;
-      fields.push(key); vals.push(val); placeholders.push('?');
+      fields.push(key); vals.push(bindValue(val)); placeholders.push('?');
     }
     const result = execute(`INSERT INTO ${table} (${fields.join(',')}) VALUES (${placeholders.join(',')})`, vals);
     return findOne({ id: result!.lastInsertRowid });
@@ -106,12 +130,8 @@ function createModel(modelName: string) {
 
   function doUpdate(where: Record<string, any>, data: Record<string, any>): any {
     const { clause, params } = buildWhere(where);
-    const sets: string[] = [];
-    const vals: any[] = [];
-    for (const [key, val] of Object.entries(data)) {
-      if (val === null || val === undefined || typeof val === 'object') continue;
-      sets.push(`${key} = ?`); vals.push(val);
-    }
+    const { sets, vals } = buildSets(data);
+    if (sets.length === 0) return findOne(where);
     execute(`UPDATE ${table} SET ${sets.join(',')}${clause}`, [...vals, ...params]);
     return findOne(where);
   }
@@ -125,9 +145,10 @@ function createModel(modelName: string) {
     update: (args?: { where?: Record<string, any>; data?: Record<string, any> }) => doUpdate(args?.where || {}, args?.data || {}),
     updateMany: (args?: { where?: Record<string, any>; data?: Record<string, any> }) => {
       const { clause, params } = buildWhere(args.where || {});
-      const sets: string[] = []; const vals: any[] = [];
-      for (const [key, val] of Object.entries(args.data)) { sets.push(`${key} = ?`); vals.push(val); }
-      execute(`UPDATE ${table} SET ${sets.join(',')}${clause}`, [...vals, ...params]);
+      const { sets, vals } = buildSets(args.data || {});
+      if (sets.length === 0) return { count: 0 };
+      const result = execute(`UPDATE ${table} SET ${sets.join(',')}${clause}`, [...vals, ...params]);
+      return { count: result?.changes || 0 };
     },
     delete: (args?: { where?: Record<string, any> }) => {
       const { clause, params } = buildWhere(args.where);

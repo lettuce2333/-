@@ -43,7 +43,7 @@ export default function ProductDetailPage() {
   const buyNow = () => {
     if (!requireLogin()) return
     if (!product || !selectedSku) return
-    Taro.setStorageSync('buy_now', [{ skuId: selectedSku.id, quantity }])
+    Taro.setStorageSync('buy_now', [{ productId: product.id, skuId: selectedSku.id, quantity }])
     Taro.navigateTo({ url: '/pages/checkout/index?mode=buy' })
   }
 

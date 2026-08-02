@@ -93,7 +93,15 @@ export default function CartPage() {
               <span className="text-sm text-[var(--color-muted)]">已选 <span className="font-medium text-[var(--color-ink)]">{selected.size}</span> 件</span>
               <span className="ml-4 text-lg font-bold text-[var(--color-accent)]">合计：&yen;{total.toFixed(2)}</span>
             </div>
-            <Button size="lg" onClick={() => selected.size > 0 && router.push('/checkout')} disabled={selected.size === 0}>
+            <Button
+              size="lg"
+              onClick={() => {
+                if (selected.size === 0) return;
+                sessionStorage.setItem('checkout_cart_ids', JSON.stringify([...selected]));
+                router.push('/checkout?mode=cart');
+              }}
+              disabled={selected.size === 0}
+            >
               去结算
             </Button>
           </div>

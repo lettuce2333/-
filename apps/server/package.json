@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "node --import tsx dist/apps/server/src/main.js",
+    "dev": "node dist/apps/server/src/main.js",
     "build": "npx tsc",
-    "start": "node --import tsx dist/apps/server/src/main.js"
+    "start": "node dist/apps/server/src/main.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",

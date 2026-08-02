@@ -12,6 +12,8 @@ const FILTERS = [
   { key: 'PENDING_PAYMENT', label: '待付款' },
   { key: 'PAID', label: '待发货' },
   { key: 'SHIPPED', label: '已发货' },
+  { key: 'RECEIVED', label: '已收货' },
+  { key: 'AFTER_SALE', label: '售后中' },
   { key: 'COMPLETED', label: '已完成' },
 ]
 
@@ -68,6 +70,16 @@ export default function OrdersPage() {
       .catch((err: Error) => Taro.showToast({ title: err.message, icon: 'none' }))
   }
 
+  const hasAfterSale = (order: Order) =>
+    order.afterSales?.some((a: any) => !['REFUNDED', 'CLOSED', 'ADMIN_REJECT', 'SHOP_REFUSED'].includes(a.status))
+
+  const statusLabel = (order: Order) =>
+    hasAfterSale(order) ? '售后中' : ORDER_STATUS_LABELS[order.status] || order.status
+
+  const openDetail = (id: number) => {
+    Taro.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
+  }
+
   return (
     <View className='orders'>
       <View className='orders__head'>
@@ -96,11 +108,11 @@ export default function OrdersPage() {
       ) : (
         <ScrollView scrollY className='orders__list'>
           {orders.map((order) => (
-            <View key={order.id} className='order-card'>
+            <View key={order.id} className='order-card' onClick={() => openDetail(order.id)}>
               <View className='order-card__head'>
                 <Text className='order-card__no'>{order.orderNo}</Text>
                 <Text className='order-card__status'>
-                  {ORDER_STATUS_LABELS[order.status] || order.status}
+                  {statusLabel(order)}
                 </Text>
               </View>
 
