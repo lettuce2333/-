@@ -195,7 +195,7 @@ export default function CourtDetailPage() {
         </View>
       )}
 
-      {(c.status === 'JUDGING' || c.status === 'ADMIN_REVIEW') && (
+      {c.canSubmitEvidence && (
         <View className='evidence-form'>
           <Text className='evidence-form__title'>提交陈述 / 证据</Text>
           <Textarea

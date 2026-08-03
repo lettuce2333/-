@@ -68,7 +68,7 @@ export default function MerchantCourtDetailPage() {
   if (!c) return <MerchantLayout title="小法庭案件详情"><div className="p-6 text-[var(--color-muted)]">案件不存在</div></MerchantLayout>;
 
   const parseImages = (s: string) => { try { return JSON.parse(s || '[]'); } catch { return []; } };
-  const canSubmit = c.status === 'JUDGING' || c.status === 'ADMIN_REVIEW';
+  const canSubmit = c.canSubmitEvidence && c.evidenceRole === 'shop';
 
   return (
     <MerchantLayout title="小法庭案件详情">

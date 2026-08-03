@@ -75,8 +75,7 @@ export default function CourtDetailPage() {
   if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-48 animate-pulse rounded-lg bg-gray-200" /></div>;
   if (!c) return <div className="py-20 text-center text-gray-400">案件不存在</div>;
 
-  const isBuyerParty = user?.id === c.afterSale?.userId;
-  const canSubmitEvidence = isBuyerParty && (c.status === 'JUDGING' || c.status === 'ADMIN_REVIEW');
+  const canSubmitEvidence = c.canSubmitEvidence;
   const parseImages = (s: string) => { try { return JSON.parse(s || '[]'); } catch { return []; } };
 
   return (

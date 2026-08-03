@@ -120,6 +120,21 @@ export class CourtService {
       voteReason = check.reason || '';
     }
 
+    let canSubmitEvidence = false;
+    let evidenceRole = '';
+    if (userId && as) {
+      if (as.userId === userId) {
+        evidenceRole = 'buyer';
+        canSubmitEvidence = c.status === 'JUDGING' || c.status === 'ADMIN_REVIEW';
+      } else {
+        const members = await prisma.shopMember.findMany({ where: { shopId: as.shopId } });
+        if (members.some((m) => m.userId === userId)) {
+          evidenceRole = 'shop';
+          canSubmitEvidence = c.status === 'JUDGING' || c.status === 'ADMIN_REVIEW';
+        }
+      }
+    }
+
     return {
       ...c,
       afterSale: as,
@@ -132,6 +147,8 @@ export class CourtService {
       myVote,
       canVote,
       voteReason,
+      canSubmitEvidence,
+      evidenceRole,
     };
   }
 
@@ -204,18 +221,18 @@ export class CourtService {
       return { ok: false, reason: '商家账号不能参与投票' };
     }
 
+    const as = await prisma.afterSale.findUnique({ where: { id: c.afterSaleId } });
+    if (!as) return { ok: false, reason: '案件数据异常' };
+    if (as.userId === userId) return { ok: false, reason: '案件当事人不能投票' };
+    const members = await prisma.shopMember.findMany({ where: { shopId: as.shopId } });
+    if (members.some((m) => m.userId === userId)) return { ok: false, reason: '涉案商家成员不能投票' };
+
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     if (new Date(user.createdAt).getTime() > sevenDaysAgo.getTime()) {
       return { ok: false, reason: '注册未满 7 天' };
     }
     const completed = await prisma.order.count({ where: { userId, status: 'COMPLETED' } });
     if (!completed) return { ok: false, reason: '需要至少一笔已完成订单' };
-
-    const as = await prisma.afterSale.findUnique({ where: { id: c.afterSaleId } });
-    if (!as) return { ok: false, reason: '案件数据异常' };
-    if (as.userId === userId) return { ok: false, reason: '案件当事人不能投票' };
-    const members = await prisma.shopMember.findMany({ where: { shopId: as.shopId } });
-    if (members.some((m) => m.userId === userId)) return { ok: false, reason: '涉案商家成员不能投票' };
     return { ok: true };
   }
 
