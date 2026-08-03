@@ -47,9 +47,13 @@ export const useAuth = create<AuthState>((set) => ({
       if (!token) { set({ loading: false }); return; }
       const user = await api.get('/auth/me');
       set({ user, loading: false });
-    } catch {
-      localStorage.removeItem('token');
-      set({ user: null, token: null, loading: false });
+    } catch (e: any) {
+      if (e?.status === 401) {
+        localStorage.removeItem('token');
+        set({ user: null, token: null, loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 }));

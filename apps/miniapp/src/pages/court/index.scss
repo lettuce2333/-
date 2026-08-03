@@ -68,6 +68,11 @@
   font-size: 22rpx;
 }
 
+.court-card__status--review {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--color-info);
+}
+
 .court-card__name {
   display: block;
   margin-top: 14rpx;

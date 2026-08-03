@@ -7,6 +7,11 @@ import { useAuth } from '@/lib/auth';
 import { Card, Badge } from '@zuoye/ui';
 import { Gavel } from 'lucide-react';
 
+const statusLabels: Record<string, string> = {
+  JUDGING: '投票中',
+  ADMIN_REVIEW: '管理员复核中',
+};
+
 export default function CourtLobbyPage() {
   const user = useAuth((s) => s.user);
   const router = useRouter();
@@ -52,7 +57,7 @@ export default function CourtLobbyPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs text-[var(--color-muted)]">{item.caseNo}</span>
-                      <Badge variant="warning">投票中</Badge>
+                      <Badge variant={item.status === 'ADMIN_REVIEW' ? 'info' : 'warning'}>{statusLabels[item.status] || item.status}</Badge>
                     </div>
                     <p className="mt-1.5 truncate text-sm font-medium text-[var(--color-ink)]">{item.productName || '售后案件'}</p>
                     <p className="mt-1 text-xs text-[var(--color-muted)]">

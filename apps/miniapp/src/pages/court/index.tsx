@@ -5,6 +5,11 @@ import { api } from '@/api'
 import { requireLogin } from '@/utils/auth'
 import './index.scss'
 
+const STATUS_LABELS: Record<string, string> = {
+  JUDGING: '投票中',
+  ADMIN_REVIEW: '管理员复核中',
+}
+
 export default function CourtPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,7 +59,7 @@ export default function CourtPage() {
           <View key={item.id} className='court-card' onClick={() => open(item.id)}>
             <View className='court-card__top'>
               <Text className='court-card__no'>{item.caseNo}</Text>
-              <Text className='court-card__status'>投票中</Text>
+              <Text className={`court-card__status ${item.status === 'ADMIN_REVIEW' ? 'court-card__status--review' : ''}`}>{STATUS_LABELS[item.status] || item.status}</Text>
             </View>
             <Text className='court-card__name'>{item.productName || '售后案件'}</Text>
             <Text className='court-card__meta'>{item.shop?.name} · ¥{item.afterSale?.amount} · {item.votes || 0}/9 票</Text>

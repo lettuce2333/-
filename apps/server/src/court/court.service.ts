@@ -70,9 +70,10 @@ export class CourtService {
 
   async lobby(page = 1, pageSize = 20) {
     const skip = (page - 1) * pageSize;
+    const statuses = ['JUDGING', 'ADMIN_REVIEW'];
     const [rows, total] = await Promise.all([
-      prisma.courtCase.findMany({ where: { status: 'JUDGING' }, orderBy: { openedAt: 'desc' }, skip, take: pageSize }),
-      prisma.courtCase.count({ where: { status: 'JUDGING' } }),
+      prisma.courtCase.findMany({ where: { status: { in: statuses } }, orderBy: { openedAt: 'desc' }, skip, take: pageSize }),
+      prisma.courtCase.count({ where: { status: { in: statuses } } }),
     ]);
     const data: any[] = [];
     for (const c of rows) {

@@ -19,7 +19,9 @@ async function request(url: string, options: RequestInit = {}) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: '请求失败' }));
-    throw new Error(err.message || `HTTP ${res.status}`);
+    const e: any = new Error(err.message || `HTTP ${res.status}`);
+    e.status = res.status;
+    throw e;
   }
 
   const text = await res.text();
