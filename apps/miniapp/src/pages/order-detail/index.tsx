@@ -89,6 +89,15 @@ export default function OrderDetailPage() {
       .catch((err: any) => Taro.showToast({ title: err.message, icon: 'none' }))
   }
 
+  const openCourt = (afterSaleId: number) => {
+    api.openCourt(afterSaleId)
+      .then(() => {
+        Taro.showToast({ title: '小法庭已开启', icon: 'success' })
+        load()
+      })
+      .catch((err: any) => Taro.showToast({ title: err.message, icon: 'none' }))
+  }
+
   if (loading) {
     return <View className='detail-page'><View className='skeleton' /></View>
   }
@@ -102,6 +111,8 @@ export default function OrderDetailPage() {
   }
 
   const hasAfterSale = order.afterSales?.some((a: any) => !['REFUNDED', 'CLOSED', 'ADMIN_REJECT', 'SHOP_REFUSED'].includes(a.status))
+  const refusedAfterSale = order.afterSales?.find((a: any) => a.status === 'SHOP_REFUSED')
+  const courtAfterSale = order.afterSales?.find((a: any) => a.status === 'COURT_JUDGING' || a.status === 'COURT_ADMIN_REVIEW')
   const statusText = hasAfterSale ? '售后中' : ORDER_STATUS_LABELS[order.status] || order.status
 
   return (
@@ -199,7 +210,13 @@ export default function OrderDetailPage() {
         {(order.status === 'RECEIVED' || order.status === 'COMPLETED') && (
           <View className='action-bar__btn action-bar__btn--ghost' onClick={() => setShowReview(!showReview)}><Text>{showReview ? '收起评价' : '评价'}</Text></View>
         )}
-        {order.status === 'RECEIVED' && !hasAfterSale && (
+        {refusedAfterSale && (
+          <View className='action-bar__btn action-bar__btn--primary' onClick={() => openCourt(refusedAfterSale.id)}><Text>开启小法庭</Text></View>
+        )}
+        {courtAfterSale?.courtCase && (
+          <View className='action-bar__btn action-bar__btn--ghost' onClick={() => Taro.navigateTo({ url: `/pages/court-detail/index?id=${courtAfterSale.courtCase.id}` })}><Text>查看小法庭</Text></View>
+        )}
+        {order.status === 'RECEIVED' && !hasAfterSale && !refusedAfterSale && (
           <View className='action-bar__btn action-bar__btn--ghost' onClick={() => setShowAfterSale(!showAfterSale)}><Text>{showAfterSale ? '收起售后' : '申请售后'}</Text></View>
         )}
       </View>

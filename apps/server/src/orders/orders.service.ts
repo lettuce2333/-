@@ -137,6 +137,9 @@ export class OrdersService {
       order.shop = await prisma.shop.findUnique({ where: { id: order.shopId } });
       order.logistics = await prisma.logistics.findUnique({ where: { orderId: order.id } });
       order.afterSales = await prisma.afterSale.findMany({ where: { orderId: order.id } });
+      for (const as of order.afterSales) {
+        as.courtCase = await prisma.courtCase.findFirst({ where: { afterSaleId: as.id } });
+      }
     }
     return { data, total, page, pageSize };
   }
@@ -151,6 +154,9 @@ export class OrdersService {
     order.shop = await prisma.shop.findUnique({ where: { id: order.shopId } });
     order.logistics = await prisma.logistics.findUnique({ where: { orderId: order.id } });
     order.afterSales = await prisma.afterSale.findMany({ where: { orderId: order.id } });
+    for (const as of order.afterSales) {
+      as.courtCase = await prisma.courtCase.findFirst({ where: { afterSaleId: as.id } });
+    }
     return order;
   }
 

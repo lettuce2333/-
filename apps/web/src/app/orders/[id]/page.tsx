@@ -49,8 +49,20 @@ const handlePay = async () => {
     } catch (err: any) { toast(err.message, 'error'); }
   };
 
+  const handleOpenCourt = async (afterSaleId: number) => {
+    try {
+      await api.post(`/after-sales/${afterSaleId}/court-open`);
+      toast('小法庭已开启', 'success');
+      window.location.reload();
+    } catch (err: any) { toast(err.message, 'error'); }
+  };
+
   if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-48 animate-pulse rounded-lg bg-gray-200" /></div>;
   if (!order) return <div className="py-20 text-center text-gray-400">订单不存在</div>;
+
+  const activeAfterSale = order.afterSales?.some((a: any) => !['REFUNDED', 'CLOSED', 'ADMIN_REJECT', 'SHOP_REFUSED'].includes(a.status));
+  const refusedAfterSale = order.afterSales?.find((a: any) => a.status === 'SHOP_REFUSED');
+  const courtAfterSale = order.afterSales?.find((a: any) => a.status === 'COURT_JUDGING' || a.status === 'COURT_ADMIN_REVIEW');
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -111,7 +123,9 @@ const handlePay = async () => {
           {order.status === 'PENDING_PAYMENT' && <Button onClick={handlePay}>去支付</Button>}
           {order.status === 'SHIPPED' && <Button onClick={handleReceive}>确认收货</Button>}
           {(order.status === 'RECEIVED' || order.status === 'COMPLETED') && <button onClick={() => setShowReview(!showReview)} className="text-sm text-blue-600 hover:underline mr-3">评价</button>}
-          {order.status === 'RECEIVED' && !(order.afterSales?.some((a: any) => !['REFUNDED','CLOSED','ADMIN_REJECT','SHOP_REFUSED'].includes(a.status))) && <Button variant="outline" onClick={() => setAfterSale({ orderId: order.id, orderNo: order.orderNo, amount: order.totalAmount, reason: '' })}>申请售后</Button>}
+          {refusedAfterSale && <Button onClick={() => handleOpenCourt(refusedAfterSale.id)}>开启小法庭</Button>}
+          {courtAfterSale?.courtCase && <Link href={`/court/${courtAfterSale.courtCase.id}`}><Button variant="outline">查看小法庭案件</Button></Link>}
+          {order.status === 'RECEIVED' && !activeAfterSale && !refusedAfterSale && <Button variant="outline" onClick={() => setAfterSale({ orderId: order.id, orderNo: order.orderNo, amount: order.totalAmount, reason: '' })}>申请售后</Button>}
         </div>
       </div>
 

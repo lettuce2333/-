@@ -29,6 +29,8 @@ export default function OrdersPage() {
   const [afterSale, setAfterSale] = useState<{ orderId: number; orderNo: string; amount: number; reason: string } | null>(null);
 
   const hasAfterSale = (order: any) => order.afterSales?.some((a: any) => !['REFUNDED','CLOSED','ADMIN_REJECT','SHOP_REFUSED'].includes(a.status));
+  const refusedAfterSale = (order: any) => order.afterSales?.find((a: any) => a.status === 'SHOP_REFUSED');
+  const courtAfterSale = (order: any) => order.afterSales?.find((a: any) => a.status === 'COURT_JUDGING' || a.status === 'COURT_ADMIN_REVIEW');
   const showStatus = (order: any) => hasAfterSale(order) ? '售后中' : statusMap[order.status];
   const showColor = (order: any) => hasAfterSale(order) ? 'warning' : statusColors[order.status];
 
@@ -65,6 +67,14 @@ export default function OrdersPage() {
       await api.post('/after-sales', { orderId: afterSale.orderId, type: 'refund_only', reason: afterSale.reason, amount: afterSale.amount });
       toast('售后申请已提交', 'success');
       setAfterSale(null);
+    } catch (err: any) { toast(err.message, 'error'); }
+  };
+
+  const handleOpenCourt = async (id: number) => {
+    try {
+      await api.post(`/after-sales/${id}/court-open`);
+      toast('小法庭已开启', 'success');
+      window.location.reload();
     } catch (err: any) { toast(err.message, 'error'); }
   };
 
@@ -133,7 +143,9 @@ export default function OrdersPage() {
                     <><Button size="sm" onClick={() => handlePay(order.id)}>去支付</Button><Button variant="ghost" size="sm" onClick={() => handleCancel(order.id)}>取消</Button></>
                   )}
                   {order.status === 'SHIPPED' && <Button size="sm" onClick={() => handleReceive(order.id)}>确认收货</Button>}
-                  {order.status === 'RECEIVED' && !hasAfterSale(order) && <Button variant="outline" size="sm" onClick={() => setAfterSale({ orderId: order.id, orderNo: order.orderNo, amount: order.totalAmount, reason: '' })}>申请售后</Button>}
+                  {refusedAfterSale(order) && <Button size="sm" onClick={() => handleOpenCourt(refusedAfterSale(order).id)}>开启小法庭</Button>}
+                  {courtAfterSale(order)?.courtCase && <Link href={`/court/${courtAfterSale(order).courtCase.id}`}><Button variant="outline" size="sm">查看小法庭案件</Button></Link>}
+                  {order.status === 'RECEIVED' && !hasAfterSale(order) && !refusedAfterSale(order) && <Button variant="outline" size="sm" onClick={() => setAfterSale({ orderId: order.id, orderNo: order.orderNo, amount: order.totalAmount, reason: '' })}>申请售后</Button>}
                 </div>
               </div>
             </Card>
