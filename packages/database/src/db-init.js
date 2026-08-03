@@ -46,4 +46,16 @@ if (isNew) {
   db.exec("CREATE TABLE IF NOT EXISTS Notification (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, type TEXT NOT NULL, title TEXT NOT NULL, content TEXT, isRead INTEGER NOT NULL DEFAULT 0, relatedId INTEGER, createdAt TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (userId) REFERENCES User(id))");
   console.log('Schema created');
 }
+
+// 旧数据库缺少本次提交新增的列时自动补列，避免拉取新代码后保存商品报错
+function ensureColumn(table, column, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!columns.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    console.log(`Migrated ${table}: added ${column}`);
+  }
+}
+
+ensureColumn('Product', 'variants', "TEXT NOT NULL DEFAULT ''");
+
 module.exports = db;

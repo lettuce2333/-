@@ -109,6 +109,7 @@ model Product {
   price       Float
   totalStock  Int      @default(0)
   sales       Int      @default(0)
+  variants    String   @default("") // 纯文本种类名，如：银色 256GB / 黑色 256GB
   status      String   @default("draft") // draft | active | rejected | archived
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -125,7 +126,7 @@ model Product {
 model ProductSku {
   id        Int    @id @default(autoincrement())
   productId Int
-  specs     String @default("{}") // JSON: {"颜色":"红","尺寸":"M"}
+  specs     String @default("") // 纯文本种类名，如：银色 256GB
   price     Float
   stock     Int
   image     String?
