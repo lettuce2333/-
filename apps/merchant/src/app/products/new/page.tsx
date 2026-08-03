@@ -9,7 +9,7 @@ import { MerchantLayout } from '@/components/merchant-layout';
 export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '' });
+  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '', tokenPrice: '' });
   const [variants, setVariants] = useState([{ name: '', stock: '', price: '' }]);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +64,7 @@ export default function NewProductPage() {
         categoryId: parseInt(form.categoryId),
         description: form.description,
         price: parseFloat(form.price) || 0.01,
+        tokenPrice: form.tokenPrice,
         images: images,
         variants: validVariants.map(v => ({
           name: v.name.trim(),
@@ -88,6 +89,7 @@ export default function NewProductPage() {
             </select>
           </div>
           <Input label="价格" type="number" placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          <Input label="法庭币兑换价" type="number" placeholder="0 表示不支持兑换" value={form.tokenPrice} onChange={(e) => setForm({ ...form, tokenPrice: e.target.value })} />
 
           {/* Variants sub-form */}
           <div className="border-t border-[var(--color-border-light)] pt-4">

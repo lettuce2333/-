@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button, Card, Badge } from '@zuoye/ui';
@@ -26,10 +27,15 @@ export default function AfterSaleDetailPage() {
     AUTO_APPROVED: '系统自动同意', WAITING_RETURN: '等待寄回', BUYER_SHIPPED: '已寄回',
     SHOP_RECEIVED: '商家已收货', REFUNDED: '已退款', DISPUTE: '申诉中',
     ADMIN_REFUND: '管理员判定退款', ADMIN_REJECT: '管理员驳回', CLOSED: '已关闭',
+    COURT_JUDGING: '小法庭投票中', COURT_ADMIN_REVIEW: '小法庭复核中',
   };
 
   const handleDispute = async () => {
     try { await api.post(`/after-sales/${id}/dispute`); toast('申诉已提交', 'success'); window.location.reload(); } catch (err: any) { toast(err.message, 'error'); }
+  };
+
+  const handleOpenCourt = async () => {
+    try { await api.post(`/after-sales/${id}/court-open`); toast('小法庭已开启', 'success'); window.location.reload(); } catch (err: any) { toast(err.message, 'error'); }
   };
 
   if (loading) return <div className="mx-auto max-w-4xl px-4 py-8"><div className="h-48 animate-pulse rounded-lg bg-gray-200" /></div>;
@@ -76,7 +82,13 @@ export default function AfterSaleDetailPage() {
       </Card>
 
       {as.status === 'SHOP_REFUSED' && (
-        <Button variant="danger" onClick={handleDispute}>申诉</Button>
+        <div className="flex gap-3">
+          <Button variant="danger" onClick={handleDispute}>申诉</Button>
+          <Button onClick={handleOpenCourt}>开启小法庭</Button>
+        </div>
+      )}
+      {(as.status === 'COURT_JUDGING' || as.status === 'COURT_ADMIN_REVIEW') && as.courtCase && (
+        <Link href={`/court/${as.courtCase.id}`} className="inline-block"><Button>查看小法庭案件</Button></Link>
       )}
     </div>
   );

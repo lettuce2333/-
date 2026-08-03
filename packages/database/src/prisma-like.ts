@@ -26,6 +26,8 @@ function buildWhere(where: any, tableAlias = ''): { clause: string; params: any[
       else if ('notIn' in val && Array.isArray(val.notIn)) { conditions.push(`${prefix}${key} NOT IN (${val.notIn.map(() => '?').join(',')})`); params.push(...val.notIn.map(bindValue)); }
       else if ('not' in val && val.not !== null && val.not !== undefined) { conditions.push(`${prefix}${key} != ?`); params.push(bindValue(val.not)); }
       else if ('equals' in val && val.equals !== null && val.equals !== undefined) { conditions.push(`${prefix}${key} = ?`); params.push(bindValue(val.equals)); }
+      else if ('lt' in val) { conditions.push(`${prefix}${key} < ?`); params.push(bindValue(val.lt instanceof Date ? val.lt.toISOString() : val.lt)); }
+      else if ('gt' in val) { conditions.push(`${prefix}${key} > ?`); params.push(bindValue(val.gt instanceof Date ? val.gt.toISOString() : val.gt)); }
       else if ('lte' in val) { conditions.push(`${prefix}${key} <= ?`); params.push(bindValue(val.lte instanceof Date ? val.lte.toISOString() : val.lte)); }
       else if ('gte' in val) { conditions.push(`${prefix}${key} >= ?`); params.push(bindValue(val.gte instanceof Date ? val.gte.toISOString() : val.gte)); }
     } else {
@@ -45,6 +47,9 @@ function modelNameToTable(name: string): string {
     logisticsTemplate: 'LogisticsTemplate', afterSale: 'AfterSale',
     afterSaleLog: 'AfterSaleLog', review: 'Review', reviewReply: 'ReviewReply',
     favorite: 'Favorite', notification: 'Notification', userRole: 'UserRole',
+    courtCase: 'CourtCase', courtVote: 'CourtVote', courtTokenAccount: 'CourtTokenAccount',
+    tokenTransaction: 'TokenTransaction', coupon: 'Coupon', redemptionOrder: 'RedemptionOrder',
+    redemptionOrderItem: 'RedemptionOrderItem',
   };
   return map[name] || name;
 }

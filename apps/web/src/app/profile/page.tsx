@@ -2,7 +2,7 @@
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { Card } from '@zuoye/ui';
-import { User, MapPin, Heart, Star, Package, LogOut } from 'lucide-react';
+import { User, MapPin, Heart, Star, Package, LogOut, Gavel, Coins } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -14,6 +14,9 @@ export default function ProfilePage() {
     { href: '/orders', label: '我的订单', icon: Package },
     { href: '/profile/favorites', label: '我的收藏', icon: Heart },
     { href: '/profile/reviews', label: '我的评价', icon: Star },
+    { href: '/court', label: '小法庭大厅', icon: Gavel },
+    { href: '/profile/court', label: '我的小法庭', icon: Gavel },
+    { href: '/profile/tokens', label: '法庭币钱包', icon: Coins },
   ];
 
   return (

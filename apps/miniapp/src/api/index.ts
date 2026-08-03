@@ -117,7 +117,7 @@ export interface Paginated<T> {
 
 export const api = {
   // Auth
-  login: (data: LoginDto) => request<{ accessToken: string; user: any }>('/api/auth/login', { method: 'POST', data, auth: false }),
+  login: (data: LoginDto) => request<{ accessToken: string; user: any }>('/api/auth/login', { method: 'POST', data: data as unknown as Record<string, unknown>, auth: false }),
   me: () => request<any>('/api/auth/me'),
 
   // Products & categories
@@ -148,6 +148,25 @@ export const api = {
     request('/api/reviews', { method: 'POST', data }),
   createAfterSale: (data: { orderId: number; type: string; reason: string; amount: number }) =>
     request('/api/after-sales', { method: 'POST', data }),
+
+  // Small court
+  courtLobby: (params: Record<string, unknown> = {}) => request<Paginated<any>>(`/api/court/lobby?${toQuery(params)}`),
+  courtMy: () => request<any[]>('/api/court/my'),
+  courtDetail: (id: number) => request<any>(`/api/court/${id}`),
+  courtVote: (id: number, side: string, comment?: string) =>
+    request(`/api/court/${id}/vote`, { method: 'POST', data: { side, comment } }),
+  courtEvidence: (id: number, data: Record<string, unknown>) =>
+    request(`/api/court/${id}/evidence`, { method: 'POST', data }),
+  openCourt: (afterSaleId: number) => request(`/api/after-sales/${afterSaleId}/court-open`, { method: 'POST' }),
+
+  // Tokens
+  tokenMe: () => request<any>('/api/tokens/me'),
+  tokenCoupons: () => request<any[]>('/api/tokens/coupons'),
+  redeemCoupon: (amount: number) => request('/api/tokens/redeem/coupon', { method: 'POST', data: { amount } }),
+  redeemProducts: () => request<any[]>('/api/tokens/redeem/products'),
+  redeemProduct: (skuId: number, quantity: number) =>
+    request('/api/tokens/redeem/product', { method: 'POST', data: { skuId, quantity } }),
+  tokenRedemptions: () => request<any[]>('/api/tokens/redemptions'),
 
   // Addresses
   createAddress: (data: { receiver: string; phone: string; province: string; city: string; district: string; detail: string; isDefault: boolean }) =>

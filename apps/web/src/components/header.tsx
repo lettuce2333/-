@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { Search, ShoppingCart, User, LogOut, Package, Bell, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, User, LogOut, Package, Bell, ChevronDown, Gavel } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUnread } from '@/lib/notifications';
@@ -78,6 +78,10 @@ export function Header() {
           <Link href="/cart" className="flex items-center gap-1.5 text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors">
             <ShoppingCart className="h-5 w-5" />
             <span className="hidden sm:inline">购物车</span>
+          </Link>
+          <Link href="/court" className="flex items-center gap-1.5 text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors">
+            <Gavel className="h-5 w-5" />
+            <span className="hidden sm:inline">小法庭</span>
           </Link>
           <Link href="/orders" className="flex items-center gap-1.5 text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors">
             <Package className="h-5 w-5" />

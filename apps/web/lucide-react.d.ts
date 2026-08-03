@@ -28,5 +28,7 @@
   export const UserPlus: Icon;
   export const CheckCheck: Icon;
   export const ChevronRight: Icon;
+  export const Gavel: Icon;
+  export const Coins: Icon;
 }
 

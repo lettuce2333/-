@@ -43,6 +43,14 @@ export default function MinePage() {
     Taro.navigateTo({ url: '/pages/orders/index' })
   }
 
+  const goCourt = () => {
+    Taro.navigateTo({ url: '/pages/court/index' })
+  }
+
+  const goTokens = () => {
+    Taro.navigateTo({ url: '/pages/tokens/index' })
+  }
+
   const goAddress = () => {
     Taro.navigateTo({ url: '/pages/address/index' })
   }
@@ -77,6 +85,16 @@ export default function MinePage() {
         <View className='menu-item' onClick={goOrders}>
           <Text className='menu-item__icon'>📋</Text>
           <Text className='menu-item__label'>我的订单</Text>
+          <Text className='menu-item__arrow'>›</Text>
+        </View>
+        <View className='menu-item' onClick={goCourt}>
+          <Text className='menu-item__icon'>⚖️</Text>
+          <Text className='menu-item__label'>小法庭</Text>
+          <Text className='menu-item__arrow'>›</Text>
+        </View>
+        <View className='menu-item' onClick={goTokens}>
+          <Text className='menu-item__icon'>🪙</Text>
+          <Text className='menu-item__label'>法庭币钱包</Text>
           <Text className='menu-item__arrow'>›</Text>
         </View>
         <View className='menu-item' onClick={goAddress}>

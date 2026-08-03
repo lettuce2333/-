@@ -24,6 +24,13 @@ async function main() {
   db.exec('DELETE FROM User');
   db.exec('DELETE FROM Category');
   db.exec('DELETE FROM LogisticsTemplate');
+  db.exec('DELETE FROM RedemptionOrderItem');
+  db.exec('DELETE FROM RedemptionOrder');
+  db.exec('DELETE FROM TokenTransaction');
+  db.exec('DELETE FROM Coupon');
+  db.exec('DELETE FROM CourtVote');
+  db.exec('DELETE FROM CourtCase');
+  db.exec('DELETE FROM CourtTokenAccount');
   const hash = await bcrypt.hash('123456', 10);
   const admin = await prisma.user.create({ data: { email: 'admin@zuoye.com', password: hash, nickname: 'Admin' } });
   await prisma.userRole.create({ data: { userId: admin.id, role: 'super_admin' } });
@@ -60,6 +67,43 @@ async function main() {
   const p3 = await prisma.product.create({ data: { shopId: shop.id, categoryId: cat2.id, name: 'Laptop 14inch', description: 'i7 laptop', images: '[]', price: 4999, totalStock: 100, sales: 890, variants: '灰色 16GB / 灰色 32GB', status: 'active' } });
   await prisma.productSku.create({ data: { productId: p3.id, specs: '灰色 16GB', price: 4999, stock: 60, image: '' } });
   await prisma.productSku.create({ data: { productId: p3.id, specs: '灰色 32GB', price: 5999, stock: 40, image: '' } });
+  const p1Skus = await prisma.productSku.findMany({ where: { productId: p1.id } });
+
+  // 小法庭测试陪审员：注册满 7 天且有已完成订单
+  const courtBuyers: any[] = [];
+  const courtCreatedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  for (let i = 1; i <= 9; i++) {
+    const no = String(i).padStart(2, '0');
+    const u = await prisma.user.create({
+      data: {
+        email: `test_court_${no}@example.com`,
+        password: hash,
+        nickname: `陪审员${no}`,
+        phone: `139000000${no}`,
+        createdAt: courtCreatedAt,
+      },
+    });
+    await prisma.userRole.create({ data: { userId: u.id, role: 'buyer' } });
+    courtBuyers.push(u);
+  }
+  for (const u of courtBuyers) {
+    const order = await prisma.order.create({
+      data: {
+        orderNo: `ORDC${u.id}${Date.now()}`,
+        userId: u.id,
+        shopId: shop.id,
+        totalAmount: 5999,
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        receiverName: u.nickname,
+        receiverPhone: u.phone,
+        receiverAddress: '测试地址',
+      },
+    });
+    await prisma.orderItem.create({
+      data: { orderId: order.id, productId: p1.id, skuId: p1Skus[0].id, productName: p1.name, skuSpecs: '银色 256GB', quantity: 1, unitPrice: 5999, subtotal: 5999, image: '' },
+    });
+  }
   await prisma.address.create({ data: { userId: buyer1.id, receiver: 'Buyer', phone: '13800138001', province: 'Guangdong', city: 'Shenzhen', district: 'Nanshan', detail: 'Building A Room 1001', isDefault: 1 } });
   console.log('Seed completed!');
   console.log('Test accounts (password: 123456):');
@@ -67,5 +111,6 @@ async function main() {
   console.log('  Buyer:   buyer@zuoye.com');
   console.log('  Shop:    shop@zuoye.com');
   console.log('  ShopCS:  shopcs@zuoye.com');
+  console.log('  小法庭陪审员: test_court_01@example.com ~ test_court_09@example.com');
 }
 main().catch((e) => { console.error(e); process.exit(1); });

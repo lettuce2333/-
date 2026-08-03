@@ -12,6 +12,10 @@ export default defineAppConfig({
     'pages/address/index',
     'pages/reviews/index',
     'pages/notifications/index',
+    'pages/court/index',
+    'pages/court-detail/index',
+    'pages/tokens/index',
+    'pages/tokens-redeem/index',
   ],
   window: {
     backgroundTextStyle: 'light',

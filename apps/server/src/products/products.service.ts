@@ -109,6 +109,7 @@ export class ProductsService {
         images: JSON.stringify(data.images || []),
         price: data.price || 0,
         totalStock,
+        tokenPrice: parseInt(data.tokenPrice) || 0,
         variants: variantsLabel,
         status: 'draft',
       },
@@ -141,6 +142,7 @@ export class ProductsService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.images !== undefined) updateData.images = JSON.stringify(data.images);
     if (data.price !== undefined) updateData.price = data.price;
+    if (data.tokenPrice !== undefined) updateData.tokenPrice = parseInt(data.tokenPrice) || 0;
 
     const variantList = Array.isArray(data.variants) ? data.variants : [];
     if (variantList.length > 0) {

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Users, Store, Package, ShoppingBag, MessageSquare, Settings, BarChart3, Layers, LogOut, ExternalLink } from 'lucide-react';
+import { Users, Store, Package, ShoppingBag, MessageSquare, Settings, BarChart3, Layers, LogOut, ExternalLink, Gavel } from 'lucide-react';
 
 const nav = [
   { href: '/dashboard', label: '仪表盘', icon: BarChart3 },
@@ -11,6 +11,7 @@ const nav = [
   { href: '/categories', label: '类目管理', icon: Layers },
   { href: '/orders', label: '订单监管', icon: Package },
   { href: '/after-sales', label: '售后仲裁', icon: MessageSquare },
+  { href: '/court', label: '小法庭复核', icon: Gavel },
   { href: '/roles', label: '权限管理', icon: Settings },
 ];
 

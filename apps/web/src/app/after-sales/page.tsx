@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -12,9 +12,14 @@ const statusLabels: Record<string, string> = {
   AUTO_APPROVED: '系统已同意', WAITING_RETURN: '等待寄回', BUYER_SHIPPED: '已寄回',
   SHOP_RECEIVED: '商家已收货', REFUNDED: '已退款', DISPUTE: '申诉中',
   ADMIN_REFUND: '管理员判定退款', ADMIN_REJECT: '管理员驳回', CLOSED: '已关闭',
+  COURT_JUDGING: '小法庭投票中', COURT_ADMIN_REVIEW: '小法庭复核中',
 };
 
 export default function AfterSalesPage() {
+  return <Suspense fallback={null}><AfterSalesContent /></Suspense>;
+}
+
+function AfterSalesContent() {
   const user = useAuth((s) => s.user);
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
@@ -32,6 +37,20 @@ export default function AfterSalesPage() {
     try {
       await api.post('/after-sales', { ...form, amount: parseFloat(form.amount) });
       toast('提交成功', 'success'); setShowForm(false); window.location.reload();
+    } catch (err: any) {
+      if (err.message?.includes('已有进行中的售后申请')) {
+        toast('该订单已有售后记录，请直接点击“开启小法庭”', 'error');
+      } else {
+        toast(err.message, 'error');
+      }
+    }
+  };
+
+  const handleOpenCourt = async (id: number) => {
+    try {
+      await api.post(`/after-sales/${id}/court-open`);
+      toast('小法庭已开启', 'success');
+      window.location.reload();
     } catch (err: any) { toast(err.message, 'error'); }
   };
 
@@ -65,8 +84,8 @@ export default function AfterSalesPage() {
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
-            <Link key={item.id} href={`/after-sales/${item.id}`}>
-              <Card accent className="px-5 py-4 group">
+            <Card key={item.id} accent className="px-5 py-4 group">
+              <Link href={`/after-sales/${item.id}`} className="block">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-[var(--color-ink)]">{item.type === 'refund_only' ? '仅退款' : '退货退款'} — &yen;{item.amount}</p>
@@ -80,8 +99,18 @@ export default function AfterSalesPage() {
                     <span className="text-[var(--color-muted)] group-hover:text-[var(--color-accent)] transition-colors">&rarr;</span>
                   </div>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+              {(item.status === 'SHOP_REFUSED' || item.status === 'COURT_JUDGING' || item.status === 'COURT_ADMIN_REVIEW') && (
+                <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3">
+                  {item.status === 'SHOP_REFUSED' && (
+                    <Button size="sm" onClick={() => handleOpenCourt(item.id)}>开启小法庭</Button>
+                  )}
+                  {(item.status === 'COURT_JUDGING' || item.status === 'COURT_ADMIN_REVIEW') && (
+                    item.courtCase && <Link href={`/court/${item.courtCase.id}`} className="inline-block"><Button size="sm" variant="outline">查看小法庭案件</Button></Link>
+                  )}
+                </div>
+              )}
+            </Card>
           ))}
         </div>
       )}

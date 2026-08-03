@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -10,6 +10,10 @@ const getImages = (p: any) => {
 };
 
 export default function ProductListPage() {
+  return <Suspense fallback={null}><ProductListContent /></Suspense>;
+}
+
+function ProductListContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);

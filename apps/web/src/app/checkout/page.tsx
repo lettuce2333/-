@@ -40,6 +40,8 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showAddrForm, setShowAddrForm] = useState(false);
   const [addrForm, setAddrForm] = useState(emptyAddrForm);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [selectedCouponId, setSelectedCouponId] = useState<number | undefined>(undefined);
   const openedAt = useRef<string | null>(null);
 
   useEffect(() => {
@@ -95,7 +97,11 @@ export default function CheckoutPage() {
       })));
     };
 
-    Promise.all([loadItems(), loadAddresses()])
+    const loadCoupons = () => api.get('/tokens/coupons').then((cps: any) => {
+      setCoupons(Array.isArray(cps) ? cps : []);
+    }).catch(() => setCoupons([]));
+
+    Promise.all([loadItems(), loadAddresses(), loadCoupons()])
       .catch((err: any) => toast(err.message, 'error'))
       .finally(() => setLoading(false));
   }, [user, router]);
@@ -127,6 +133,7 @@ export default function CheckoutPage() {
         items: items.map((i) => ({ skuId: i.skuId, quantity: i.quantity })),
         createdAt: openedAt.current || undefined,
         fromCart: mode === 'cart',
+        couponId: selectedCouponId,
       });
       const orderId = Array.isArray(res) ? res[0]?.id : res?.id;
       toast('订单创建成功', 'success');
@@ -214,6 +221,26 @@ export default function CheckoutPage() {
               <p className="text-sm font-bold text-red-500">￥{((item.price || 0) * item.quantity).toFixed(2)}</p>
             </div>
           ))}
+        </div>
+      </Card>
+
+      <Card className="mb-4">
+        <div className="border-b border-gray-100 px-6 py-4 font-medium">优惠券</div>
+        <div className="px-6 py-4">
+          {coupons.length === 0 ? (
+            <p className="text-sm text-gray-400">暂无可用优惠券</p>
+          ) : (
+            <select
+              value={selectedCouponId || ''}
+              onChange={(e) => setSelectedCouponId(e.target.value ? parseInt(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            >
+              <option value="">不使用优惠券</option>
+              {coupons.map((c) => (
+                <option key={c.id} value={c.id}>{c.title}（满{c.minSpend}元可用）</option>
+              ))}
+            </select>
+          )}
         </div>
       </Card>
 

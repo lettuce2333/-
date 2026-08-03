@@ -65,6 +65,7 @@ export class AfterSalesService {
         orderBy: { createdAt: 'desc' },
         take: 3,
       });
+      item.courtCase = await prisma.courtCase.findFirst({ where: { afterSaleId: item.id } });
     }
     return { data, total, page, pageSize };
   }
@@ -80,6 +81,7 @@ export class AfterSalesService {
       where: { afterSaleId: afterSale.id },
       orderBy: { createdAt: 'asc' },
     });
+    afterSale.courtCase = await prisma.courtCase.findFirst({ where: { afterSaleId: afterSale.id } });
     return afterSale;
   }
 
@@ -106,6 +108,7 @@ export class AfterSalesService {
         orderBy: { createdAt: 'desc' },
         take: 3,
       });
+      item.courtCase = await prisma.courtCase.findFirst({ where: { afterSaleId: item.id } });
     }
     return { data, total, page, pageSize };
   }

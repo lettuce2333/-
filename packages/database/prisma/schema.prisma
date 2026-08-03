@@ -26,6 +26,11 @@ model User {
   reviews      Review[]
   favorites    Favorite[]
   notifications Notification[]
+  courtVotes   CourtVote[]
+  courtTokenAccount CourtTokenAccount?
+  coupons      Coupon[]
+  tokenTransactions TokenTransaction[]
+  redemptionOrders RedemptionOrder[]
   ownedShop    Shop?        @relation("ShopOwner")
   shopMembers  ShopMember[]
 }
@@ -109,6 +114,7 @@ model Product {
   price       Float
   totalStock  Int      @default(0)
   sales       Int      @default(0)
+  tokenPrice  Int      @default(0) // 0 表示不支持法庭币兑换
   variants    String   @default("") // 纯文本种类名，如：银色 256GB / 黑色 256GB
   status      String   @default("draft") // draft | active | rejected | archived
   createdAt   DateTime @default(now())
@@ -117,6 +123,7 @@ model Product {
   shop     Shop         @relation(fields: [shopId], references: [id])
   category Category     @relation(fields: [categoryId], references: [id])
   skus     ProductSku[]
+  redemptionOrderItems RedemptionOrderItem[]
   cartItems  CartItem[]
   orderItems OrderItem[]
   reviews  Review[]
@@ -155,6 +162,8 @@ model Order {
   userId          Int
   shopId          Int
   totalAmount     Float
+  couponId        Int?      @unique
+  couponAmount    Float     @default(0)
   status          String   @default("PENDING_PAYMENT")
   receiverName    String?
   receiverPhone   String?
@@ -170,6 +179,7 @@ model Order {
   user         User             @relation(fields: [userId], references: [id])
   shop         Shop             @relation(fields: [shopId], references: [id])
   items        OrderItem[]
+  coupon       Coupon?          @relation(fields: [couponId], references: [id])
   payments     Payment[]
   logistics    Logistics?
   afterSales   AfterSale[]
@@ -254,6 +264,7 @@ model AfterSale {
   user  User  @relation(fields: [userId], references: [id])
   shop  Shop  @relation(fields: [shopId], references: [id])
   logs  AfterSaleLog[]
+  courtCase CourtCase?
 }
 
 model AfterSaleLog {
@@ -320,4 +331,109 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CourtCase {
+  id             Int      @id @default(autoincrement())
+  caseNo         String   @unique
+  afterSaleId    Int      @unique
+  initiator      String   @default("buyer") // buyer | shop
+  status         String   @default("JUDGING") // JUDGING | CLOSED_BUYER_WIN | CLOSED_SHOP_WIN | ADMIN_REVIEW | ADMIN_REFUND | ADMIN_REJECT | ADMIN_PARTIAL | CANCELLED
+  buyerStatement String   @default("")
+  shopStatement  String   @default("")
+  buyerEvidence  String   @default("[]") // JSON array
+  shopEvidence   String   @default("[]") // JSON array
+  buyerRebuttal  String   @default("")
+  shopRebuttal   String   @default("")
+  judgeCount     Int      @default(9)
+  voteDeadline   String
+  openedAt       DateTime @default(now())
+  closedAt       DateTime?
+  adminDecision  String?
+  adminRemark    String?
+
+  afterSale AfterSale  @relation(fields: [afterSaleId], references: [id])
+  votes     CourtVote[]
+}
+
+model CourtVote {
+  id        Int      @id @default(autoincrement())
+  caseId    Int
+  userId    Int
+  side      String // buyer | shop
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+
+  case CourtCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, userId])
+}
+
+model CourtTokenAccount {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  balance     Int      @default(0)
+  totalEarned Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TokenTransaction {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  type              String // court_reward | redeem_coupon | redeem_product
+  amount            Int
+  uniqueKey         String?  @unique
+  caseId            Int?
+  couponId          Int?
+  redemptionOrderId Int?
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  amount    Float
+  minSpend  Float    @default(0)
+  status    String   @default("unused") // unused | used | expired
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  orderId   Int?     @unique
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id])
+}
+
+model RedemptionOrder {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  orderNo     String   @unique
+  totalTokens Int
+  status      String   @default("PENDING") // PENDING | COMPLETED | CANCELLED
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  user  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items RedemptionOrderItem[]
+}
+
+model RedemptionOrderItem {
+  id                Int    @id @default(autoincrement())
+  redemptionOrderId Int
+  productId         Int
+  skuId             Int
+  productName       String
+  skuSpecs          String @default("")
+  quantity          Int
+  tokenPrice        Int
+  image             String?
+
+  redemptionOrder RedemptionOrder @relation(fields: [redemptionOrderId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id])
+  sku             ProductSku      @relation(fields: [skuId], references: [id])
 }

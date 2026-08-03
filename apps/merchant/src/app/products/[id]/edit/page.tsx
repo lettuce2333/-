@@ -12,7 +12,7 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '' });
+  const [form, setForm] = useState({ name: '', categoryId: '', description: '', price: '', tokenPrice: '' });
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [variants, setVariants] = useState([{ name: '', stock: '', price: '' }]);
@@ -28,7 +28,7 @@ export default function EditProductPage() {
       const products = res.data || [];
       const product = products.find((p: any) => p.id === parseInt(id));
       if (product) {
-        setForm({ name: product.name, categoryId: String(product.categoryId), description: product.description || '', price: String(product.price || '') });
+        setForm({ name: product.name, categoryId: String(product.categoryId), description: product.description || '', price: String(product.price || ''), tokenPrice: String(product.tokenPrice || '') });
         try { const imgs = JSON.parse(product.images || '[]'); setImages(Array.isArray(imgs) ? imgs : []); } catch { setImages([]); }
         const skus = product.skus || [];
         if (skus.length > 0) {
@@ -66,6 +66,7 @@ export default function EditProductPage() {
       await api.put(`/merchant/products/${id}`, {
         name: form.name, categoryId: parseInt(form.categoryId), description: form.description,
         images, price: parseFloat(form.price) || 0,
+        tokenPrice: form.tokenPrice,
         variants: validVariants.map(v => ({
           name: v.name.trim(),
           stock: parseInt(v.stock) || 0,
@@ -90,6 +91,7 @@ export default function EditProductPage() {
             </select>
           </div>
           <Input label="价格" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          <Input label="法庭币兑换价" type="number" placeholder="0 表示不支持兑换" value={form.tokenPrice} onChange={(e) => setForm({ ...form, tokenPrice: e.target.value })} />
 
           <div className="border-t border-[var(--color-border-light)] pt-4">
             <div className="mb-3 flex items-center justify-between">

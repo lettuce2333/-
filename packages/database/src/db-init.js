@@ -47,6 +47,14 @@ if (isNew) {
   console.log('Schema created');
 }
 
+db.exec("CREATE TABLE IF NOT EXISTS CourtCase (id INTEGER PRIMARY KEY AUTOINCREMENT, caseNo TEXT NOT NULL UNIQUE, afterSaleId INTEGER NOT NULL UNIQUE, initiator TEXT NOT NULL DEFAULT 'buyer', status TEXT NOT NULL DEFAULT 'JUDGING', buyerStatement TEXT NOT NULL DEFAULT '', shopStatement TEXT NOT NULL DEFAULT '', buyerEvidence TEXT NOT NULL DEFAULT '[]', shopEvidence TEXT NOT NULL DEFAULT '[]', buyerRebuttal TEXT NOT NULL DEFAULT '', shopRebuttal TEXT NOT NULL DEFAULT '', judgeCount INTEGER NOT NULL DEFAULT 9, voteDeadline TEXT NOT NULL, openedAt TEXT NOT NULL DEFAULT (datetime('now')), closedAt TEXT, adminDecision TEXT, adminRemark TEXT, FOREIGN KEY (afterSaleId) REFERENCES AfterSale(id))");
+db.exec("CREATE TABLE IF NOT EXISTS CourtVote (id INTEGER PRIMARY KEY AUTOINCREMENT, caseId INTEGER NOT NULL, userId INTEGER NOT NULL, side TEXT NOT NULL, comment TEXT NOT NULL DEFAULT '', createdAt TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (caseId) REFERENCES CourtCase(id) ON DELETE CASCADE, FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE, UNIQUE(caseId, userId))");
+db.exec("CREATE TABLE IF NOT EXISTS CourtTokenAccount (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL UNIQUE, balance INTEGER NOT NULL DEFAULT 0, totalEarned INTEGER NOT NULL DEFAULT 0, updatedAt TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE)");
+db.exec("CREATE TABLE IF NOT EXISTS TokenTransaction (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, type TEXT NOT NULL, amount INTEGER NOT NULL, uniqueKey TEXT UNIQUE, caseId INTEGER, couponId INTEGER, redemptionOrderId INTEGER, createdAt TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE)");
+db.exec("CREATE TABLE IF NOT EXISTS Coupon (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, title TEXT NOT NULL, amount REAL NOT NULL, minSpend REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'unused', expiresAt TEXT NOT NULL, createdAt TEXT NOT NULL DEFAULT (datetime('now')), orderId INTEGER UNIQUE, FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE)");
+db.exec("CREATE TABLE IF NOT EXISTS RedemptionOrder (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, orderNo TEXT NOT NULL UNIQUE, totalTokens INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'PENDING', createdAt TEXT NOT NULL DEFAULT (datetime('now')), completedAt TEXT, FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE)");
+db.exec("CREATE TABLE IF NOT EXISTS RedemptionOrderItem (id INTEGER PRIMARY KEY AUTOINCREMENT, redemptionOrderId INTEGER NOT NULL, productId INTEGER NOT NULL, skuId INTEGER NOT NULL, productName TEXT NOT NULL, skuSpecs TEXT NOT NULL DEFAULT '', quantity INTEGER NOT NULL, tokenPrice INTEGER NOT NULL, image TEXT, FOREIGN KEY (redemptionOrderId) REFERENCES RedemptionOrder(id) ON DELETE CASCADE, FOREIGN KEY (productId) REFERENCES Product(id), FOREIGN KEY (skuId) REFERENCES ProductSku(id))");
+
 // 旧数据库缺少本次提交新增的列时自动补列，避免拉取新代码后保存商品报错
 function ensureColumn(table, column, definition) {
   const columns = db.prepare(`PRAGMA table_info(${table})`).all();
@@ -57,5 +65,8 @@ function ensureColumn(table, column, definition) {
 }
 
 ensureColumn('Product', 'variants', "TEXT NOT NULL DEFAULT ''");
+ensureColumn('Product', 'tokenPrice', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('"Order"', 'couponId', 'INTEGER');
+ensureColumn('"Order"', 'couponAmount', 'REAL NOT NULL DEFAULT 0');
 
 module.exports = db;

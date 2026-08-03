@@ -6,7 +6,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 export class OrdersService {
   constructor(private notificationsService: NotificationsService) {}
 
-  async create(userId: number, data: { addressId: number; items: { skuId: number; quantity: number }[]; remark?: string; createdAt?: string; fromCart?: boolean }) {
+  async create(userId: number, data: { addressId: number; items: { skuId: number; quantity: number }[]; remark?: string; createdAt?: string; fromCart?: boolean; couponId?: number }) {
     // Get address
     const address = await prisma.address.findFirst({ where: { id: data.addressId, userId } });
     if (!address) throw new NotFoundException('地址不存在');
@@ -31,11 +31,37 @@ export class OrdersService {
       shopGroups.get(shopId)!.push({ sku, product, quantity: item.quantity });
     }
 
+    let coupon: any = null;
+    if (data.couponId) {
+      coupon = await prisma.coupon.findFirst({ where: { id: data.couponId, userId, status: 'unused' } });
+      if (!coupon) throw new BadRequestException('优惠券不可用');
+      if (new Date(coupon.expiresAt).getTime() < Date.now()) throw new BadRequestException('优惠券已过期');
+    }
+
+    const groupTotals = new Map<number, number>();
+    for (const [shopId, items] of shopGroups) {
+      groupTotals.set(shopId, items.reduce((sum, i) => sum + i.sku.price * i.quantity, 0));
+    }
+    let couponShopId: number | null = null;
+    if (coupon) {
+      for (const [shopId, total] of groupTotals) {
+        if (total >= coupon.minSpend) { couponShopId = shopId; break; }
+      }
+      if (couponShopId == null) throw new BadRequestException('未达到优惠券使用门槛');
+    }
+
     // Create orders (one per shop)
     const orders: any[] = [];
     for (const [shopId, items] of shopGroups) {
       const orderNo = `ORD${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-      const totalAmount = items.reduce((sum, i) => sum + i.sku.price * i.quantity, 0);
+      const rawTotal = items.reduce((sum, i) => sum + i.sku.price * i.quantity, 0);
+      let totalAmount = rawTotal;
+      let couponAmount = 0;
+      const useCoupon = coupon && shopId === couponShopId;
+      if (useCoupon) {
+        couponAmount = Math.min(coupon.amount, rawTotal);
+        totalAmount = Math.round((rawTotal - couponAmount) * 100) / 100;
+      }
 
       // Deduct stock
       for (const item of items) {
@@ -48,12 +74,15 @@ export class OrdersService {
       // Create order
       const order = await prisma.order.create({
         data: {
-          orderNo, userId, shopId, totalAmount, createdAt: orderTime,
+          orderNo, userId, shopId, totalAmount, couponId: useCoupon ? coupon.id : undefined, couponAmount, createdAt: orderTime,
           receiverName: address.receiver,
           receiverPhone: address.phone,
           receiverAddress: `${address.province}${address.city}${address.district}${address.detail}`,
         },
       });
+      if (useCoupon) {
+        await prisma.coupon.update({ where: { id: coupon.id }, data: { status: 'used', orderId: order.id } });
+      }
 
       // Create order items
       for (const i of items) {
@@ -168,6 +197,7 @@ export class OrdersService {
     await prisma.order.update({ where: { id: orderId }, data: { status: 'SHIPPED', shippedAt: new Date().toISOString() } });
     await prisma.logistics.create({ data: { orderId, company: courier, trackingNo: trackNo, status: 'shipped', shippedAt: new Date().toISOString() } });
     await prisma.orderStatusLog.create({ data: { orderId, fromStatus: 'PAID', toStatus: 'SHIPPED', operator: 'shop', remark: `发货，${courier}: ${trackNo}` } });
+    await this.notificationsService.create(order.userId, 'order', '订单已发货', `订单 ${order.orderNo} 已由 ${courier} 发出，运单号 ${trackNo}`, orderId);
     return prisma.order.findUnique({ where: { id: orderId } });
   }
 
